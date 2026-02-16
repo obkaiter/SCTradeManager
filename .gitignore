@@ -1,0 +1,68 @@
+# Python
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Виртуальное окружение
+venv/
+ENV/
+env/
+.venv/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+/static
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ОС
+Thumbs.db
+Desktop.ini
+
+# Временные файлы
+*.tmp
+*.bak
+*.pyc
+__pycache__/
+
+# Тесты и покрытие
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+
+# Документация
+docs/_build/
+
+# Загрузки
+*.zip
+*.tar.gz
+*.rar

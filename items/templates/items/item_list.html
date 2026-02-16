@@ -1,0 +1,965 @@
+{% extends 'items/base.html' %}
+{% load item_tags %}
+
+{% block title %}Список предметов{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Список предметов</h1>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+            <i class="bi bi-plus-lg"></i> Добавить предмет
+        </button>
+        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#searchModal">
+            Поиск
+        </button>
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#dateFilterModal">
+            Фильтр по дате
+        </button>
+        <button type="button" class="btn btn-secondary" id="toggleSoldBtn">
+            <i class="bi bi-eye-slash"></i> Скрыть проданные
+        </button>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#expenseModal" id="openExpenseBtn">
+            Непредвиденные расходы
+        </button>
+    </div>
+</div>
+
+<!-- Суммарная прибыль -->
+<div class="alert alert-info d-flex flex-column mb-3">
+    <div class="d-flex justify-content-between align-items-center">
+        <span><strong>Суммарная прибыль за период: {{ date_from|date:"d.m.y" }} - {{ date_to|date:"d.m.y" }}</strong></span>
+        <span class="fs-4 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% endif %}">
+            {{ total_profit|format_price }}
+        </span>
+    </div>
+    <div class="d-flex justify-content-between align-items-center mt-2">
+        <span><strong>Непредвиденные расходы:</strong></span>
+        <span class="fs-5 text-danger">
+            - {{ total_expenses|format_price }}
+        </span>
+    </div>
+    <hr class="my-2">
+    <div class="d-flex justify-content-between align-items-center">
+        <span><strong>Чистая прибыль:</strong></span>
+        <span class="fs-4 {% if net_profit < 0 %}text-danger{% elif net_profit > 0 %}text-success{% endif %}">
+            {{ net_profit|format_price }}
+        </span>
+    </div>
+</div>
+
+<!-- Форма фильтра по дате (скрытая, для отправки) -->
+<form id="dateFilterForm" method="get" style="display:none;">
+    <input type="date" name="date_from" id="date_from_hidden" value="{{ date_from|date:'Y-m-d' }}">
+    <input type="date" name="date_to" id="date_to_hidden" value="{{ date_to|date:'Y-m-d' }}">
+</form>
+
+<div class="table-responsive" style="background: white; border: 2px solid #a0a0a0; border-radius: 4px;">
+    <table class="table table-excel mb-0">
+        <thead>
+            <tr>
+                <th style="width: 50px;" class="text-center">№</th>
+                <th class="sortable" data-sort="name">
+                    Название предмета
+                    <span class="sort-icon">{% if sort_by == 'name' %}▲{% elif sort_by == '-name' %}▼{% else %}▾{% endif %}</span>
+                </th>
+                <th class="sortable text-right" data-sort="purchase_price">
+                    Цена покупки
+                    <span class="sort-icon">{% if sort_by == 'purchase_price' %}▲{% elif sort_by == '-purchase_price' %}▼{% else %}▾{% endif %}</span>
+                </th>
+                <th class="sortable text-right" data-sort="sale_price">
+                    Цена продажи
+                    <span class="sort-icon">{% if sort_by == 'sale_price' %}▲{% elif sort_by == '-sale_price' %}▼{% else %}▾{% endif %}</span>
+                </th>
+                <th class="sortable text-center" data-sort="purchase_date">
+                    Дата покупки
+                    <span class="sort-icon">{% if sort_by == 'purchase_date' %}▲{% elif sort_by == '-purchase_date' %}▼{% else %}▾{% endif %}</span>
+                </th>
+                <th class="sortable text-center" data-sort="sale_date">
+                    Дата продажи
+                    <span class="sort-icon">{% if sort_by == 'sale_date' %}▲{% elif sort_by == '-sale_date' %}▼{% else %}▾{% endif %}</span>
+                </th>
+                <th class="sortable text-right" data-sort="profit">
+                    Прибыль
+                    <span class="sort-icon">{% if sort_by == 'profit' %}▲{% elif sort_by == '-profit' %}▼{% else %}▾{% endif %}</span>
+                </th>
+                <th style="width: 50px;" class="text-center">Удалить</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if sort_by == 'profit' or sort_by == '-profit' %}
+                {% for item in items %}
+                <tr data-item-id="{{ item.id }}" data-is-sold="{% if item.sale_price and item.sale_date %}true{% else %}false{% endif %}">
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td class="editable-cell" data-field="name">
+                        <span class="display-value">{{ item.name }}</span>
+                        <input type="text" class="edit-input" value="{{ item.name }}" style="display:none;">
+                    </td>
+                    <td class="editable-cell price-cell" data-field="purchase_price">
+                        <span class="display-value">{{ item.purchase_price|format_price }}</span>
+                        <input type="text" class="edit-input" value="{{ item.purchase_price }}" style="display:none;">
+                    </td>
+                    <td class="editable-cell price-cell" data-field="sale_price">
+                        <span class="display-value">{{ item.sale_price|format_price }}</span>
+                        <input type="text" class="edit-input" value="{{ item.sale_price|default:'' }}" style="display:none;">
+                    </td>
+                    <td class="editable-cell text-center" data-field="purchase_date">
+                        <span class="display-value">{{ item.purchase_date|date:"d.m.y" }}</span>
+                        <input type="date" class="edit-input" value="{{ item.purchase_date|date:'Y-m-d' }}" style="display:none;">
+                    </td>
+                    <td class="editable-cell text-center" data-field="sale_date">
+                        <span class="display-value">{{ item.sale_date|date:"d.m.y"|default:"" }}</span>
+                        <input type="date" class="edit-input" value="{{ item.sale_date|date:'Y-m-d'|default:'' }}" style="display:none;">
+                    </td>
+                    <td class="profit-cell {% if item.profit < 0 %}negative-profit{% elif item.profit > 0 %}positive-profit{% elif item.sale_price is None %}no-sale-profit{% endif %}">
+                        {% if item.sale_price is None %}-{{ item.purchase_price|format_price }}{% else %}{{ item.profit|format_price }}{% endif %}
+                    </td>
+                    <td class="text-center">
+                        <button class="btn btn-sm btn-danger delete-btn" data-item-id="{{ item.id }}" title="Удалить">
+                            &times;
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                {% regroup items by purchase_date as items_by_date %}
+                {% for date_group in items_by_date %}
+                    {% for item in date_group.list %}
+                    <tr data-item-id="{{ item.id }}" data-is-sold="{% if item.sale_price and item.sale_date %}true{% else %}false{% endif %}">
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td class="editable-cell" data-field="name">
+                            <span class="display-value">{{ item.name }}</span>
+                            <input type="text" class="edit-input" value="{{ item.name }}" style="display:none;">
+                        </td>
+                        <td class="editable-cell price-cell" data-field="purchase_price">
+                            <span class="display-value">{{ item.purchase_price|format_price }}</span>
+                            <input type="text" class="edit-input" value="{{ item.purchase_price }}" style="display:none;">
+                        </td>
+                        <td class="editable-cell price-cell" data-field="sale_price">
+                            <span class="display-value">{{ item.sale_price|format_price }}</span>
+                            <input type="text" class="edit-input" value="{{ item.sale_price|default:'' }}" style="display:none;">
+                        </td>
+                        <td class="editable-cell text-center" data-field="purchase_date">
+                            <span class="display-value">{{ item.purchase_date|date:"d.m.y" }}</span>
+                            <input type="date" class="edit-input" value="{{ item.purchase_date|date:'Y-m-d' }}" style="display:none;">
+                        </td>
+                        <td class="editable-cell text-center" data-field="sale_date">
+                            <span class="display-value">{{ item.sale_date|date:"d.m.y"|default:"" }}</span>
+                            <input type="date" class="edit-input" value="{{ item.sale_date|date:'Y-m-d'|default:'' }}" style="display:none;">
+                        </td>
+                        <td class="profit-cell {% if item.profit < 0 %}negative-profit{% elif item.profit > 0 %}positive-profit{% elif item.sale_price is None %}no-sale-profit{% endif %}">
+                            {% if item.sale_price is None %}-{{ item.purchase_price|format_price }}{% else %}{{ item.profit|format_price }}{% endif %}
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-danger delete-btn" data-item-id="{{ item.id }}" title="Удалить">
+                                &times;
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+            {% endif %}
+            {% if items|length == 0 %}
+            <tr>
+                <td colspan="8" class="text-center text-muted">Нет предметов в базе данных</td>
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Модальное окно непредвиденных расходов -->
+<div class="modal fade" id="expenseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Непредвиденные расходы</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Форма добавления -->
+                <form id="addExpenseForm" class="mb-4">
+                    {% csrf_token %}
+                    <h6>Добавить расходы</h6>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <input type="date" name="date" class="form-control" required>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="amount" id="addExpenseAmount" class="form-control" placeholder="Сумма" required>
+                        </div>
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-success w-100">Добавить</button>
+                        </div>
+                    </div>
+                </form>
+                
+                <!-- Список расходов -->
+                <h6>Список расходов</h6>
+                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Дата</th>
+                                <th>Сумма</th>
+                                <th style="width: 80px;">Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expenseListBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно редактирования расходов -->
+<div class="modal fade" id="editExpenseModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editExpenseForm">
+                {% csrf_token %}
+                <input type="hidden" name="expense_id" id="editExpenseId">
+                <div class="modal-header">
+                    <h5 class="modal-title">Редактирование расходов</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Дата</label>
+                        <input type="date" name="date" id="editExpenseDate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Сумма</label>
+                        <input type="text" name="amount" id="editExpenseAmount" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно добавления предмета -->
+<div class="modal fade" id="addItemModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="addItemForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title">Добавить новый предмет</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название предмета</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Цена покупки</label>
+                        <input type="text" name="purchase_price" id="addItemPurchasePrice" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Цена продажи</label>
+                        <input type="text" name="sale_price" id="addItemSalePrice" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Дата покупки</label>
+                        <input type="date" name="purchase_date" id="addItemPurchaseDate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Дата продажи</label>
+                        <input type="date" name="sale_date" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success">Добавить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно поиска -->
+<div class="modal fade" id="searchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form action="{% url 'items:search_items' %}" method="get">
+                <div class="modal-header">
+                    <h5 class="modal-title">Поиск предметов</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group">
+                        <input type="text" name="query" class="form-control" placeholder="Введите название предмета" required>
+                        <button type="submit" class="btn btn-primary">Поиск</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно фильтра по дате -->
+<div class="modal fade" id="dateFilterModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="dateFilterModalForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">Фильтр по периоду</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Дата покупки с:</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ date_from }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Дата покупки по:</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ date_to }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="todayBtn">Сегодня</button>
+                    <button type="button" class="btn btn-outline-secondary" id="showAllBtn">Отобразить всё</button>
+                    <button type="submit" class="btn btn-primary">Применить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Подтверждение удаления</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Вы уверены, что хотите удалить этот предмет?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Форматирование цены с пробелами между разрядами
+function formatPrice(value) {
+    if (!value && value !== 0) return '';
+    const num = parseInt(value) || 0;
+    return num.toLocaleString('ru-RU') + ' ₽';
+}
+
+// Парсинг цены (удаляет пробелы, символ рубля и другие нецифровые символы)
+function parsePrice(value) {
+    if (!value) return '';
+    // Удаляем всё кроме цифр и минуса
+    return value.replace(/[^\d-]/g, '');
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Сортировка по клику на заголовок
+    document.querySelectorAll('.sortable').forEach(th => {
+        th.addEventListener('click', function() {
+            const field = this.dataset.sort;
+            const currentSort = '{{ sort_by }}';
+            let newSort;
+            
+            // Если текущая сортировка по этому полю - меняем направление
+            if (currentSort === field) {
+                newSort = '-' + field;
+            } else if (currentSort === '-' + field) {
+                newSort = field;
+            } else {
+                newSort = field;
+            }
+            
+            // Сохраняем текущие параметры фильтра
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('sort', newSort);
+            window.location.href = '?' + urlParams.toString();
+        });
+    });
+    const editableCells = document.querySelectorAll('.editable-cell');
+    
+    editableCells.forEach(cell => {
+        const displayValue = cell.querySelector('.display-value');
+        const editInput = cell.querySelector('.edit-input');
+        const field = cell.dataset.field;
+        
+        // Форматируем цену при отображении в input
+        if (field === 'purchase_price' || field === 'sale_price') {
+            const rawValue = editInput.value;
+            if (rawValue) {
+                editInput.value = formatPrice(rawValue);
+            }
+        }
+        
+        // Выделение всего текста при фокусе
+        editInput.addEventListener('focus', function() {
+            if (field === 'purchase_price' || field === 'sale_price') {
+                // Показываем сырое значение для редактирования
+                const rawValue = parsePrice(this.value);
+                this.value = rawValue;
+                this.select();
+            }
+        });
+
+        // Дабл-клик по ячейке - режим редактирования
+        cell.addEventListener('dblclick', function() {
+            displayValue.style.display = 'none';
+            editInput.style.display = 'block';
+            editInput.focus();
+        });
+
+        // Форматирование при потере фокуса
+        editInput.addEventListener('blur', function() {
+            if (field === 'purchase_price' || field === 'sale_price') {
+                const rawValue = parsePrice(this.value);
+                if (rawValue) {
+                    this.value = formatPrice(rawValue);
+                }
+            }
+            saveValue(cell);
+        });
+        
+        editInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                editInput.blur();
+            }
+        });
+        
+        editInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                editInput.style.display = 'none';
+                displayValue.style.display = 'inline';
+            }
+        });
+    });
+    
+    function saveValue(cell) {
+        const row = cell.closest('tr');
+        const itemId = row.dataset.itemId;
+        const field = cell.dataset.field;
+        const editInput = cell.querySelector('.edit-input');
+        const displayValue = cell.querySelector('.display-value');
+
+        // Получаем значение: для цен парсим, для остальных полей берём как есть
+        let newValue = editInput.value;
+        if (field === 'purchase_price' || field === 'sale_price') {
+            newValue = parsePrice(editInput.value);
+        }
+
+        if (newValue === displayValue.textContent || newValue === parsePrice(displayValue.textContent)) {
+            editInput.style.display = 'none';
+            displayValue.style.display = 'inline';
+            return;
+        }
+
+        // Если изменяем цену продажи и дата продажи пустая - выставляем текущую
+        if (field === 'sale_price' && newValue !== '') {
+            const saleDateCell = row.querySelector('[data-field="sale_date"]');
+            const saleDateDisplay = saleDateCell.querySelector('.display-value');
+            const saleDateInput = saleDateCell.querySelector('.edit-input');
+            
+            if (!saleDateDisplay.textContent || saleDateDisplay.textContent.trim() === '') {
+                const today = new Date().toISOString().split('T')[0];
+                const formatted = new Date().toLocaleDateString('ru-RU', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: '2-digit'
+                });
+                
+                // Сначала обновляем дату продажи, затем цену
+                fetch(`/items/${itemId}/update/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `field=sale_date&value=${encodeURIComponent(today)}`
+                })
+                .then(response => response.json())
+                .then(dateData => {
+                    if (dateData.success) {
+                        // Обновляем отображение даты продажи
+                        saleDateDisplay.textContent = formatted;
+                        saleDateInput.value = today;
+                        
+                        // Теперь обновляем цену продажи
+                        return fetch(`/items/${itemId}/update/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            body: `field=${field}&value=${encodeURIComponent(newValue)}`
+                        });
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.success) {
+                        const numValue = parseFloat(data.value) || 0;
+                        displayValue.textContent = numValue.toLocaleString('ru-RU') + ' ₽';
+                        
+                        const profitCell = row.querySelector('.profit-cell');
+                        const profitValue = parseFloat(data.profit);
+                        profitCell.textContent = profitValue.toLocaleString('ru-RU') + ' ₽';
+                        
+                        // Обновляем классы
+                        profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit');
+                        if (data.is_negative) {
+                            profitCell.classList.add('negative-profit');
+                        } else if (data.profit > 0) {
+                            profitCell.classList.add('positive-profit');
+                        }
+                    }
+                })
+                .catch(error => console.error('Error:', error))
+                .finally(() => {
+                    editInput.style.display = 'none';
+                    displayValue.style.display = 'inline';
+                });
+                
+                return; // Выходим, чтобы не выполнять основной fetch
+            }
+        }
+
+        fetch(`/items/${itemId}/update/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `field=${field}&value=${encodeURIComponent(newValue)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Форматируем цену с символом рубля
+                if (field === 'purchase_price' || field === 'sale_price') {
+                    const numValue = parseFloat(data.value) || 0;
+                    displayValue.textContent = numValue.toLocaleString('ru-RU') + ' ₽';
+
+                    const profitCell = row.querySelector('.profit-cell');
+                    if (data.profit !== undefined) {
+                        const profitValue = parseFloat(data.profit);
+                        profitCell.textContent = profitValue.toLocaleString('ru-RU') + ' ₽';
+                        
+                        // Обновляем классы
+                        profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit');
+                        if (data.is_negative) {
+                            profitCell.classList.add('negative-profit');
+                        } else if (data.profit > 0) {
+                            profitCell.classList.add('positive-profit');
+                        }
+                    } else if (field === 'sale_price' && newValue === '') {
+                        // Если удалили цену продажи - показываем минус цену покупки
+                        const purchasePriceCell = row.querySelector('[data-field="purchase_price"]');
+                        const purchasePrice = parsePrice(purchasePriceCell.querySelector('.display-value').textContent);
+                        const profitCell = row.querySelector('.profit-cell');
+                        profitCell.textContent = '-' + formatPrice(purchasePrice);
+                        profitCell.classList.remove('negative-profit', 'positive-profit');
+                        profitCell.classList.add('no-sale-profit');
+                    }
+                } else if (field === 'purchase_date' || field === 'sale_date') {
+                    if (data.value) {
+                        const date = new Date(data.value);
+                        const formatted = date.toLocaleDateString('ru-RU', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: '2-digit'
+                        });
+                        displayValue.textContent = formatted;
+                    } else {
+                        displayValue.textContent = '';
+                    }
+                } else {
+                    displayValue.textContent = data.value || '';
+                }
+            }
+        })
+        .catch(error => console.error('Error:', error))
+        .finally(() => {
+            editInput.style.display = 'none';
+            displayValue.style.display = 'inline';
+        });
+    }
+    
+    // Фильтр по дате
+    document.getElementById('dateFilterModalForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const hideSold = '{{ hide_sold|yesno:"true,false" }}';
+        formData.append('hide_sold', hideSold);
+
+        const queryString = new URLSearchParams(formData).toString();
+        window.location.href = '?' + queryString;
+    });
+
+    // Кнопка "Скрыть/Показать проданные"
+    const toggleSoldBtn = document.getElementById('toggleSoldBtn');
+    const hideSoldState = '{{ hide_sold|yesno:"true,false" }}';
+    
+    // Устанавливаем начальное состояние кнопки
+    if (hideSoldState === 'true') {
+        toggleSoldBtn.innerHTML = '<i class="bi bi-eye"></i> Показать проданные';
+        toggleSoldBtn.classList.remove('btn-secondary');
+        toggleSoldBtn.classList.add('btn-success');
+    }
+
+    toggleSoldBtn.addEventListener('click', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentHideSold = urlParams.get('hide_sold') || 'false';
+        const newHideSold = currentHideSold === 'true' ? 'false' : 'true';
+        
+        urlParams.set('hide_sold', newHideSold);
+        
+        // Обновляем текст и стиль кнопки
+        if (newHideSold === 'true') {
+            toggleSoldBtn.innerHTML = '<i class="bi bi-eye"></i> Показать проданные';
+            toggleSoldBtn.classList.remove('btn-secondary');
+            toggleSoldBtn.classList.add('btn-success');
+        } else {
+            toggleSoldBtn.innerHTML = '<i class="bi bi-eye-slash"></i> Скрыть проданные';
+            toggleSoldBtn.classList.remove('btn-success');
+            toggleSoldBtn.classList.add('btn-secondary');
+        }
+        
+        window.location.href = '?' + urlParams.toString();
+    });
+    
+    // Кнопка "Отобразить всё" - сброс фильтров даты
+    document.getElementById('showAllBtn').addEventListener('click', function() {
+        const today = new Date().toISOString().split('T')[0];
+        const hideSold = '{{ hide_sold|yesno:"true,false" }}';
+        window.location.href = '?date_from=2020-01-01&date_to=' + today + '&hide_sold=' + hideSold;
+    });
+    
+    // Кнопка "Сегодня" - фильтр по текущей дате
+    document.getElementById('todayBtn').addEventListener('click', function() {
+        const today = new Date().toISOString().split('T')[0];
+        const hideSold = '{{ hide_sold|yesno:"true,false" }}';
+        window.location.href = '?date_from=' + today + '&date_to=' + today + '&hide_sold=' + hideSold;
+    });
+    
+    // Удаление предмета с модальным окном
+    let deleteItemId = null;
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    
+    document.querySelectorAll('.delete-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            deleteItemId = this.dataset.itemId;
+            deleteModal.show();
+        });
+    });
+    
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (deleteItemId) {
+            fetch(`/items/${deleteItemId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload(); // Перезагружаем для пересчёта нумерации и суммы
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    });
+    
+    document.getElementById('deleteModal').addEventListener('hidden.bs.modal', function() {
+        deleteItemId = null;
+    });
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Установка сегодняшней даты в форму добавления предмета
+    const today = new Date().toISOString().split('T')[0];
+    const lastPurchaseDate = localStorage.getItem('lastPurchaseDate') || today;
+    const lastSaleDate = localStorage.getItem('lastSaleDate') || '';
+    
+    document.getElementById('addItemPurchaseDate').value = lastPurchaseDate;
+    
+    const saleDateInput = document.querySelector('[name="sale_date"]');
+    if (saleDateInput && lastSaleDate) {
+        saleDateInput.value = lastSaleDate;
+    }
+    
+    // Сохранение дат при изменении
+    document.getElementById('addItemPurchaseDate').addEventListener('change', function() {
+        localStorage.setItem('lastPurchaseDate', this.value);
+    });
+    
+    if (saleDateInput) {
+        saleDateInput.addEventListener('change', function() {
+            localStorage.setItem('lastSaleDate', this.value);
+        });
+    }
+    
+    // Форматирование цен в формах
+    const expenseAmountInputs = ['addExpenseAmount', 'editExpenseAmount'];
+    expenseAmountInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        
+        input.addEventListener('blur', function() {
+            const rawValue = parsePrice(this.value);
+            if (rawValue) {
+                this.value = formatPrice(rawValue);
+            }
+        });
+        
+        input.addEventListener('focus', function() {
+            const rawValue = parsePrice(this.value);
+            this.value = rawValue;
+            this.select();
+        });
+    });
+    
+    // Форматирование цен в форме добавления предмета
+    const itemPriceInputs = ['addItemPurchasePrice', 'addItemSalePrice'];
+    itemPriceInputs.forEach(id => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        
+        input.addEventListener('blur', function() {
+            const rawValue = parsePrice(this.value);
+            if (rawValue) {
+                this.value = formatPrice(rawValue);
+            }
+        });
+        
+        input.addEventListener('focus', function() {
+            const rawValue = parsePrice(this.value);
+            this.value = rawValue;
+            this.select();
+        });
+    });
+    
+    // Загрузка расходов при открытии модального окна
+    document.getElementById('openExpenseBtn').addEventListener('click', function() {
+        // Небольшая задержка чтобы модальное окно успело открыться
+        setTimeout(loadExpenses, 100);
+    });
+    
+    // Загрузка списка расходов
+    function loadExpenses() {
+        console.log('Loading expenses...');
+        fetch("/items/expenses/")
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.json();
+            })
+            .then(data => {
+                console.log('Expenses data:', data);
+                const tbody = document.getElementById('expenseListBody');
+                tbody.innerHTML = '';
+                
+                if (data.expenses.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Нет расходов</td></tr>';
+                    return;
+                }
+                
+                data.expenses.forEach(exp => {
+                    const date = new Date(exp.date).toLocaleDateString('ru-RU', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: '2-digit'
+                    });
+                    const row = `
+                        <tr>
+                            <td>${date}</td>
+                            <td>${formatPrice(exp.amount)}</td>
+                            <td>
+                                <button class="btn btn-sm btn-primary edit-expense-btn" 
+                                    data-id="${exp.id}" 
+                                    data-date="${exp.date}" 
+                                    data-amount="${exp.amount}">
+                                    ✎
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-expense-btn" data-id="${exp.id}">
+                                    &times;
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+                
+                // Добавляем обработчики для кнопок
+                document.querySelectorAll('.edit-expense-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const id = this.dataset.id;
+                        const date = this.dataset.date;
+                        const amount = this.dataset.amount;
+
+                        document.getElementById('editExpenseId').value = id;
+                        document.getElementById('editExpenseDate').value = date;
+                        document.getElementById('editExpenseAmount').value = amount;
+
+                        const editModal = new bootstrap.Modal(document.getElementById('editExpenseModal'));
+                        editModal.show();
+                    });
+                });
+                
+                document.querySelectorAll('.delete-expense-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        if (confirm('Удалить эту запись о расходах?')) {
+                            const id = this.dataset.id;
+                            fetch(`/items/expenses/${id}/delete/`, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRFToken': getCookie('csrftoken'),
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    loadExpenses();
+                                    location.reload();
+                                }
+                            })
+                            .catch(error => console.error('Error:', error));
+                        }
+                    });
+                });
+            })
+            .catch(error => console.error('Error:', error));
+    }
+    
+    // Добавление расходов
+    document.getElementById('addExpenseForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        // Очищаем значение суммы перед отправкой
+        const amountInput = document.getElementById('addExpenseAmount');
+        const rawAmount = parsePrice(amountInput.value);
+        formData.set('amount', rawAmount);
+        
+        fetch("/items/expenses/create/", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.reset();
+                loadExpenses();
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+    
+    // Редактирование расходов
+    document.getElementById('editExpenseForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const expenseId = document.getElementById('editExpenseId').value;
+        
+        // Очищаем значение суммы перед отправкой
+        const amountInput = document.getElementById('editExpenseAmount');
+        const rawAmount = parsePrice(amountInput.value);
+        formData.set('amount', rawAmount);
+        
+        fetch(`/items/expenses/${expenseId}/update/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const editModal = bootstrap.Modal.getInstance(document.getElementById('editExpenseModal'));
+                editModal.hide();
+                loadExpenses();
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+    
+    // Добавление предмета
+    document.getElementById('addItemForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        // Очищаем значения цен перед отправкой
+        const purchasePriceInput = document.getElementById('addItemPurchasePrice');
+        const salePriceInput = document.getElementById('addItemSalePrice');
+        
+        formData.set('purchase_price', parsePrice(purchasePriceInput.value));
+        formData.set('sale_price', parsePrice(salePriceInput.value));
+        
+        fetch("/items/add/", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Закрываем модальное окно
+                const modal = bootstrap.Modal.getInstance(document.getElementById('addItemModal'));
+                modal.hide();
+                // Очищаем форму
+                this.reset();
+                // Устанавливаем дату покупки по умолчанию (сегодня)
+                this.querySelector('[name="purchase_date"]').value = new Date().toISOString().split('T')[0];
+                // Перезагружаем страницу
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+});
+</script>
+{% endblock %}
