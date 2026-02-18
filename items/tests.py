@@ -115,17 +115,6 @@ class ItemServiceTest(TestCase):
         total_profit = ItemService.calculate_total_profit(items)
         self.assertEqual(total_profit, 300)
 
-    def test_search_by_query(self):
-        """Тест поиска по названию."""
-        # Создаём предмет с английским названием для теста
-        Item.objects.create(
-            name='Test Item',
-            purchase_price=1000,
-            purchase_date=self.today
-        )
-        items = ItemService.search_by_query('test')
-        self.assertGreaterEqual(items.count(), 1)
-
     def test_update_item_valid(self):
         """Тест обновления предмета."""
         item = Item.objects.first()

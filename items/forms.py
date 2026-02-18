@@ -19,10 +19,3 @@ class ItemForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if not self.instance.pk and 'purchase_date' not in self.initial:
             self.fields['purchase_date'].initial = timezone.now().date()
-
-
-class SearchForm(forms.Form):
-    query = forms.CharField(
-        label='',
-        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Введите название предмета'})
-    )

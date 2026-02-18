@@ -1,7 +1,6 @@
 from django.urls import path
 from items.views import (
     item_list,
-    search_items,
     add_item,
     update_item,
     delete_item,
@@ -16,7 +15,6 @@ app_name = 'items'
 urlpatterns = [
     path('', item_list, name='item_list'),
     path('add/', add_item, name='add_item'),
-    path('search/', search_items, name='search_items'),
     path('<int:pk>/update/', update_item, name='update_item'),
     path('<int:pk>/delete/', delete_item, name='delete_item'),
     path('expenses/', expense_list, name='expense_list'),

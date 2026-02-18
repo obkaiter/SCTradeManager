@@ -13,9 +13,6 @@
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
             <i class="bi bi-plus-lg"></i> Добавить предмет
         </button>
-        <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#searchModal">
-            Поиск
-        </button>
         <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#dateFilterModal">
             Фильтр по дате
         </button>
@@ -238,26 +235,6 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                     <button type="submit" class="btn btn-success">Добавить</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно поиска -->
-<div class="modal fade" id="searchModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form action="{% url 'items:search_items' %}" method="get">
-                <div class="modal-header">
-                    <h5 class="modal-title">Поиск предметов</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="input-group">
-                        <input type="text" name="query" class="form-control" placeholder="Введите название предмета" required>
-                        <button type="submit" class="btn btn-primary">Поиск</button>
-                    </div>
                 </div>
             </form>
         </div>

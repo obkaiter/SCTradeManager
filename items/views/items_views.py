@@ -49,16 +49,3 @@ def item_list(request):
         'sort_by': sort_by,
         'hide_sold': hide_sold,
     })
-
-
-def search_items(request):
-    """Поиск предметов по названию."""
-    query = request.GET.get('query', '')
-    items = ItemService.search_by_query(query)
-    total_profit = ItemService.calculate_total_profit(items)
-
-    return render(request, 'items/search_results.html', {
-        'items': items,
-        'query': query,
-        'total_profit': total_profit,
-    })

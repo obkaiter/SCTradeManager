@@ -78,28 +78,6 @@ class ItemService:
         return sum(item.profit for item in items if item.profit is not None)
 
     @staticmethod
-    def search_by_query(query):
-        """
-        Поиск предметов по названию.
-        
-        Args:
-            query: Поисковый запрос
-            
-        Returns:
-            QuerySet найденных предметов
-        """
-        from django.db.models.functions import Lower
-        
-        if not query:
-            return Item.objects.none()
-
-        return Item.objects.annotate(
-            name_lower=Lower('name')
-        ).filter(
-            name_lower__icontains=query.lower()
-        ).order_by('purchase_date', 'purchase_price')
-
-    @staticmethod
     def update_item(item, field, value):
         """
         Обновить поле предмета.
