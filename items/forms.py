@@ -1,4 +1,5 @@
 from django import forms
+from django.utils import timezone
 from .models import Item
 
 
@@ -13,6 +14,11 @@ class ItemForm(forms.ModelForm):
             'purchase_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'sale_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.instance.pk and 'purchase_date' not in self.initial:
+            self.fields['purchase_date'].initial = timezone.now().date()
 
 
 class SearchForm(forms.Form):

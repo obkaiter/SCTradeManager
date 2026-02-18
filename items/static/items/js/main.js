@@ -138,27 +138,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Установка сегодняшней даты в форму добавления предмета
-    const addItemPurchaseDate = document.getElementById('addItemPurchaseDate');
-    if (addItemPurchaseDate) {
-        const today = new Date().toISOString().split('T')[0];
-        const lastPurchaseDate = localStorage.getItem('lastPurchaseDate') || today;
-        addItemPurchaseDate.value = lastPurchaseDate;
-
-        addItemPurchaseDate.addEventListener('change', function() {
-            localStorage.setItem('lastPurchaseDate', this.value);
-        });
-    }
-
-    const saleDateInput = document.querySelector('#addItemModal [name="sale_date"]');
-    if (saleDateInput) {
-        const lastSaleDate = localStorage.getItem('lastSaleDate') || '';
-        if (lastSaleDate) {
-            saleDateInput.value = lastSaleDate;
-        }
-
-        saleDateInput.addEventListener('change', function() {
-            localStorage.setItem('lastSaleDate', this.value);
+    // Установка сегодняшней даты в форму добавления предмета при каждом открытии окна
+    const addItemModal = document.getElementById('addItemModal');
+    if (addItemModal) {
+        addItemModal.addEventListener('show.bs.modal', function() {
+            const today = new Date().toISOString().split('T')[0];
+            const purchaseDateInput = document.getElementById('addItemPurchaseDate');
+            if (purchaseDateInput) {
+                purchaseDateInput.value = today;
+            }
+            // Очищаем форму
+            const addItemForm = document.getElementById('addItemForm');
+            if (addItemForm) {
+                addItemForm.reset();
+                purchaseDateInput.value = today;
+            }
         });
     }
 
