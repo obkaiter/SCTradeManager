@@ -23,11 +23,14 @@ def item_list(request):
     
     # Считаем прибыль
     total_profit = ItemService.calculate_total_profit(items)
-    
+
     # Считаем расходы за период
     expenses = ExpenseService.get_expenses_in_period(date_from, date_to)
     total_expenses = ExpenseService.calculate_total_expenses(expenses)
-    
+
+    # Считаем зарезервированную сумму (предметы без даты продажи)
+    reserved_amount = ItemService.calculate_reserved_amount(items)
+
     # Чистая прибыль
     net_profit = total_profit - total_expenses
 
@@ -45,6 +48,7 @@ def item_list(request):
         'date_to': date_to_obj,
         'total_profit': total_profit,
         'total_expenses': total_expenses,
+        'reserved_amount': reserved_amount,
         'net_profit': net_profit,
         'sort_by': sort_by,
         'hide_sold': hide_sold,

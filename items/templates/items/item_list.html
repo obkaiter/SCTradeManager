@@ -39,6 +39,12 @@
             - {{ total_expenses|format_price }}
         </span>
     </div>
+    <div class="d-flex justify-content-between align-items-center mt-2">
+        <span><strong>Зарезервировано:</strong></span>
+        <span class="fs-5 text-secondary">
+            {{ reserved_amount|format_price }}
+        </span>
+    </div>
     <hr class="my-2">
     <div class="d-flex justify-content-between align-items-center">
         <span><strong>Чистая прибыль:</strong></span>

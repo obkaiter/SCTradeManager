@@ -68,14 +68,32 @@ class ItemService:
     def calculate_total_profit(items):
         """
         Рассчитать суммарную прибыль.
-        
+
         Args:
             items: Список предметов
-            
+
         Returns:
             Общая прибыль
         """
         return sum(item.profit for item in items if item.profit is not None)
+
+    @staticmethod
+    def calculate_reserved_amount(items):
+        """
+        Рассчитать сумму зарезервированных предметов (без даты продажи).
+        Считается по цене закупа. Возвращает абсолютное значение (неотрицательное).
+
+        Args:
+            items: Список предметов
+
+        Returns:
+            Зарезервированная сумма (неотрицательное число)
+        """
+        reserved = sum(
+            item.purchase_price for item in items
+            if item.sale_date is None
+        )
+        return abs(reserved)
 
     @staticmethod
     def update_item(item, field, value):
