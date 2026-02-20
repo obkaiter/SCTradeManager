@@ -20,7 +20,7 @@
             <i class="bi bi-eye-slash"></i> Скрыть проданные
         </button>
         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#expenseModal" id="openExpenseBtn">
-            Непредвиденные расходы
+            Накладные расходы
         </button>
     </div>
 </div>
@@ -34,7 +34,7 @@
         </span>
     </div>
     <div class="d-flex justify-content-between align-items-center mt-2">
-        <span><strong>Непредвиденные расходы:</strong></span>
+        <span><strong>Накладные расходы:</strong></span>
         <span class="fs-5 text-danger">
             - {{ total_expenses|format_price }}
         </span>
@@ -134,7 +134,7 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Непредвиденные расходы</h5>
+                <h5 class="modal-title">Накладные расходы</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">

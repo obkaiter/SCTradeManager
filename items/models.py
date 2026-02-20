@@ -31,8 +31,8 @@ class Expense(models.Model):
     amount = models.IntegerField("Сумма")
 
     class Meta:
-        verbose_name = "Непредвиденные расходы"
-        verbose_name_plural = "Непредвиденные расходы"
+        verbose_name = "Накладные расходы"
+        verbose_name_plural = "Накладные расходы"
         ordering = ['-date']
 
     def __str__(self):
