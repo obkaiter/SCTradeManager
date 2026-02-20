@@ -18,7 +18,79 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     });
+
+    // Обработчик клика для копирования названия предмета
+    let clickTimeout = null;
+    let lastClickedCell = null;
+
+    document.addEventListener('click', function(e) {
+        const cell = e.target.closest('.copy-on-click[data-field="name"]');
+        if (cell && !e.target.classList.contains('edit-input')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // Если кликнули по той же ячейке второй раз - это двойной клик, отменяем копирование
+            if (lastClickedCell === cell && clickTimeout) {
+                clearTimeout(clickTimeout);
+                clickTimeout = null;
+                lastClickedCell = null;
+                return;
+            }
+
+            // Отменяем предыдущий таймер если был
+            if (clickTimeout) {
+                clearTimeout(clickTimeout);
+            }
+
+            lastClickedCell = cell;
+
+            // Задержка для определения двойного клика
+            clickTimeout = setTimeout(function() {
+                copyItemName(cell);
+                clickTimeout = null;
+                lastClickedCell = null;
+            }, 200);
+        }
+    });
 });
+
+/**
+ * Копирование названия предмета в буфер обмена
+ * @param {HTMLElement} cell - Ячейка с названием предмета
+ */
+function copyItemName(cell) {
+    const displayValue = cell.querySelector('.display-value');
+    if (!displayValue) return;
+
+    const itemName = displayValue.textContent.trim();
+    if (!itemName) return;
+
+    navigator.clipboard.writeText(itemName).then(function() {
+        // Визуальная обратная связь
+        cell.classList.add('copied');
+        setTimeout(function() {
+            cell.classList.remove('copied');
+        }, 800);
+    }).catch(function(err) {
+        // Fallback для старых браузеров
+        const textArea = document.createElement('textarea');
+        textArea.value = itemName;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            cell.classList.add('copied');
+            setTimeout(function() {
+                cell.classList.remove('copied');
+            }, 800);
+        } catch (err) {
+            console.error('Не удалось скопировать текст', err);
+        }
+        document.body.removeChild(textArea);
+    });
+}
 
 /**
  * Инициализация редактируемых ячеек

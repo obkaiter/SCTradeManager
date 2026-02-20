@@ -91,7 +91,7 @@
             {% for item in items %}
             <tr data-item-id="{{ item.id }}" data-is-sold="{% if item.sale_price and item.sale_date %}true{% else %}false{% endif %}">
                 <td class="text-center">{{ forloop.counter }}</td>
-                <td class="editable-cell" data-field="name">
+                <td class="editable-cell copy-on-click" data-field="name" title="Клик для копирования, двойной клик для редактирования">
                     <span class="display-value">{{ item.name }}</span>
                     <input type="text" class="edit-input" value="{{ item.name }}" style="display:none;">
                 </td>

@@ -35,6 +35,22 @@
         .editable-cell:hover {
             background-color: #e8f4fd;
         }
+        .copy-on-click {
+            position: relative;
+        }
+        .copy-on-click.copied {
+            background-color: #c8e6c9 !important;
+        }
+        .copy-on-click.copied::after {
+            content: '✓';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #2e7d32;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
         .editable-cell input {
             border: 2px solid #2196f3;
             border-radius: 0;
