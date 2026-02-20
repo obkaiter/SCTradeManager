@@ -213,7 +213,8 @@ function updateCellDisplay(cell, row, field, data, newValue) {
         }
 
         const profitCell = row.querySelector('.profit-cell');
-        if (data.profit !== undefined) {
+        // Проверяем, что profit существует и не пустая строка
+        if (data.profit !== undefined && data.profit !== '' && data.profit !== null) {
             const profitValue = parseFloat(data.profit);
             profitCell.textContent = profitValue.toLocaleString('ru-RU') + ' ₽';
 
@@ -230,6 +231,28 @@ function updateCellDisplay(cell, row, field, data, newValue) {
             profitCell.textContent = '-' + formatPrice(purchasePrice);
             profitCell.classList.remove('negative-profit', 'positive-profit');
             profitCell.classList.add('no-sale-profit');
+        } else if (field === 'purchase_price') {
+            // При изменении цены покупки пересчитываем прибыль
+            const salePriceCell = row.querySelector('[data-field="sale_price"]');
+            const salePriceText = salePriceCell?.querySelector('.display-value')?.textContent || '';
+            const salePrice = parseInt(parsePrice(salePriceText)) || null;
+            
+            if (salePrice === null || salePriceText === '') {
+                // Товар не продан - прибыль = -purchase_price
+                profitCell.textContent = '-' + formatPrice(numValue);
+                profitCell.classList.remove('negative-profit', 'positive-profit');
+                profitCell.classList.add('no-sale-profit');
+            } else {
+                // Товар продан - прибыль = sale_price - purchase_price
+                const profit = salePrice - numValue;
+                profitCell.textContent = profit.toLocaleString('ru-RU') + ' ₽';
+                profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit');
+                if (profit < 0) {
+                    profitCell.classList.add('negative-profit');
+                } else if (profit > 0) {
+                    profitCell.classList.add('positive-profit');
+                }
+            }
         }
     } else if (field === 'purchase_date' || field === 'sale_date') {
         if (data.value) {
