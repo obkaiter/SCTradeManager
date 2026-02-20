@@ -161,6 +161,32 @@
             font-size: 14px;
             font-weight: 600;
         }
+
+        /* Контекстное меню */
+        .context-menu {
+            position: absolute;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            min-width: 150px;
+            display: none;
+        }
+        .context-menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        .context-menu-item:hover {
+            background-color: #f0f0f0;
+        }
+        .context-menu-item:first-child {
+            border-radius: 4px 4px 0 0;
+        }
+        .context-menu-item:last-child {
+            border-radius: 0 0 4px 4px;
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>

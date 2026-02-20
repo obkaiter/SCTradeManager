@@ -2,6 +2,23 @@
  * Логика редактирования предметов в таблице.
  */
 
+// Переменные для контекстного меню
+let contextMenuCell = null;
+let contextMenu = null;
+
+// Блокировка стандартного контекстного меню браузера
+document.addEventListener('contextmenu', function(e) {
+    // Проверяем, что клик по ячейке с ценой покупки
+    const target = e.target.closest('.price-cell[data-field="purchase_price"]');
+    if (target) {
+        e.preventDefault();
+        e.stopPropagation();
+        contextMenuCell = target;
+        showContextMenu(e.pageX, e.pageY);
+        return false;
+    }
+});
+
 /**
  * Инициализация редактируемых ячеек
  * @param {NodeList} cells - Коллекция редактируемых ячеек
@@ -33,6 +50,13 @@ function initEditableCells(cells) {
 
         // Дабл-клик для редактирования
         cell.addEventListener('dblclick', function() {
+            // Синхронизируем значение input с текущим отображаемым значением
+            if (field === 'purchase_price' || field === 'sale_price') {
+                const rawValue = parsePrice(displayValue.textContent);
+                editInput.value = rawValue;
+            } else {
+                editInput.value = displayValue.textContent;
+            }
             displayValue.style.display = 'none';
             editInput.style.display = 'block';
             editInput.focus();
@@ -62,6 +86,9 @@ function initEditableCells(cells) {
             }
         });
     });
+
+    // Инициализация контекстного меню
+    initContextMenu();
 }
 
 /**
@@ -175,10 +202,15 @@ function saveCellValue(cell) {
  */
 function updateCellDisplay(cell, row, field, data, newValue) {
     const displayValue = cell.querySelector('.display-value');
-    
+    const editInput = cell.querySelector('.edit-input');
+
     if (field === 'purchase_price' || field === 'sale_price') {
         const numValue = parseFloat(data.value) || 0;
         displayValue.textContent = numValue.toLocaleString('ru-RU') + ' ₽';
+        // Обновляем также значение в input для последующего редактирования
+        if (editInput) {
+            editInput.value = numValue.toLocaleString('ru-RU') + ' ₽';
+        }
 
         const profitCell = row.querySelector('.profit-cell');
         if (data.profit !== undefined) {
@@ -208,10 +240,182 @@ function updateCellDisplay(cell, row, field, data, newValue) {
                 year: '2-digit'
             });
             displayValue.textContent = formatted;
+            // Обновляем также значение в input
+            if (editInput) {
+                editInput.value = data.value;
+            }
         } else {
             displayValue.textContent = '';
+            if (editInput) {
+                editInput.value = '';
+            }
         }
     } else {
         displayValue.textContent = data.value || '';
+        // Обновляем также значение в input
+        if (editInput) {
+            editInput.value = data.value || '';
+        }
     }
+}
+
+/**
+ * Инициализация контекстного меню
+ */
+function initContextMenu() {
+    contextMenu = document.getElementById('purchasePriceContextMenu');
+    if (!contextMenu) return;
+
+    const editItem = document.getElementById('ctxMenuEdit');
+    const addItem = document.getElementById('ctxMenuAdd');
+
+    // Пункт "Изменить" - открывает стандартное редактирование
+    editItem.addEventListener('click', function(e) {
+        e.stopPropagation();
+        hideContextMenu();
+        if (contextMenuCell) {
+            const displayValue = contextMenuCell.querySelector('.display-value');
+            const editInput = contextMenuCell.querySelector('.edit-input');
+            if (displayValue && editInput) {
+                displayValue.style.display = 'none';
+                editInput.style.display = 'block';
+                editInput.focus();
+            }
+        }
+    });
+
+    // Пункт "Добавить" - открывает модальное окно
+    addItem.addEventListener('click', function(e) {
+        e.stopPropagation();
+        hideContextMenu();
+        if (contextMenuCell) {
+            openAddPriceModal(contextMenuCell);
+        }
+    });
+
+    // Закрытие контекстного меню при клике в любом месте
+    document.addEventListener('click', function() {
+        hideContextMenu();
+    });
+
+    // Предотвращаем всплытие клика по контекстному меню
+    contextMenu.addEventListener('click', function(e) {
+        e.stopPropagation();
+    });
+    contextMenu.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+}
+
+/**
+ * Показать контекстное меню
+ * @param {number} x - Координата X
+ * @param {number} y - Координата Y
+ */
+function showContextMenu(x, y) {
+    if (!contextMenu) return;
+
+    contextMenu.style.display = 'block';
+    contextMenu.style.left = x + 'px';
+    contextMenu.style.top = y + 'px';
+
+    // Проверка выхода за границы экрана
+    const rect = contextMenu.getBoundingClientRect();
+    if (x + rect.width > window.innerWidth) {
+        contextMenu.style.left = (x - rect.width) + 'px';
+    }
+    if (y + rect.height > window.innerHeight) {
+        contextMenu.style.top = (y - rect.height) + 'px';
+    }
+}
+
+/**
+ * Скрыть контекстное меню
+ */
+function hideContextMenu() {
+    if (contextMenu) {
+        contextMenu.style.display = 'none';
+    }
+}
+
+/**
+ * Открыть модальное окно добавления значения к цене покупки
+ * @param {HTMLElement} cell - Ячейка с ценой покупки
+ */
+function openAddPriceModal(cell) {
+    const displayValue = cell.querySelector('.display-value');
+    if (!displayValue) return;
+
+    const currentPriceText = displayValue.textContent;
+    const currentPrice = parsePrice(currentPriceText);
+    const currentPriceNum = parseInt(currentPrice) || 0;
+
+    const modal = document.getElementById('addPurchasePriceModal');
+    const currentPriceSpan = document.getElementById('currentPurchasePrice');
+    const newPriceSpan = document.getElementById('newPurchasePrice');
+    const amountInput = document.getElementById('addPriceAmount');
+    const confirmBtn = document.getElementById('confirmAddPriceBtn');
+
+    if (!modal || !currentPriceSpan || !newPriceSpan || !amountInput || !confirmBtn) return;
+
+    // Отображаем текущую цену
+    currentPriceSpan.textContent = formatPrice(currentPriceNum);
+
+    // Сбрасываем поле ввода
+    amountInput.value = '';
+    newPriceSpan.textContent = '';
+
+    // Обновляем новую цену при вводе
+    amountInput.addEventListener('input', function() {
+        const addAmount = parseInt(parsePrice(this.value)) || 0;
+        const newPrice = currentPriceNum + addAmount;
+        newPriceSpan.textContent = formatPrice(newPrice);
+    });
+
+    // Создаем модальное окно Bootstrap
+    const bsModal = new bootstrap.Modal(modal);
+
+    // Обработчик кнопки "Добавить"
+    const handleConfirm = function() {
+        const addAmount = parseInt(parsePrice(amountInput.value)) || 0;
+        if (addAmount === 0) {
+            bsModal.hide();
+            return;
+        }
+
+        const newPrice = currentPriceNum + addAmount;
+        const row = cell.closest('tr');
+        const itemId = row?.dataset.itemId;
+
+        if (!itemId) {
+            bsModal.hide();
+            return;
+        }
+
+        // Отправляем запрос на сервер
+        fetch(`/items/${itemId}/update/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `field=purchase_price&value=${encodeURIComponent(newPrice)}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateCellDisplay(cell, row, 'purchase_price', data, newPrice.toString());
+            }
+        })
+        .catch(error => console.error('Error:', error))
+        .finally(() => {
+            bsModal.hide();
+            // Удаляем обработчик, чтобы не дублировался
+            confirmBtn.removeEventListener('click', handleConfirm);
+        });
+    };
+
+    confirmBtn.addEventListener('click', handleConfirm);
+    bsModal.show();
 }

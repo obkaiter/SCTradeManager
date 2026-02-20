@@ -294,4 +294,40 @@
         </div>
     </div>
 </div>
+
+<!-- Модальное окно добавления значения к цене покупки -->
+<div class="modal fade" id="addPurchasePriceModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Добавить к цене покупки</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Текущая цена покупки:</label>
+                    <span id="currentPurchasePrice" class="fs-5 fw-bold"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="addPriceAmount">Добавить сумму:</label>
+                    <input type="text" id="addPriceAmount" class="form-control" placeholder="Введите сумму">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Новая цена покупки:</label>
+                    <span id="newPurchasePrice" class="fs-5 fw-bold text-success"></span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="button" class="btn btn-success" id="confirmAddPriceBtn">Добавить</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Контекстное меню для цены покупки -->
+<div id="purchasePriceContextMenu" class="context-menu">
+    <div class="context-menu-item" id="ctxMenuEdit">Изменить</div>
+    <div class="context-menu-item" id="ctxMenuAdd">Добавить</div>
+</div>
 {% endblock %}
