@@ -54,10 +54,19 @@
         .editable-cell input {
             border: 2px solid #2196f3;
             border-radius: 0;
-            padding: 6px 10px;
+            padding: 2px 6px;
             width: 100%;
             font-family: inherit;
-            font-size: 19px;
+            font-size: 18px;
+            box-sizing: border-box;
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            margin: 0;
+        }
+        .editable-cell {
+            position: relative;
         }
         .editable-cell input:focus {
             outline: none;
