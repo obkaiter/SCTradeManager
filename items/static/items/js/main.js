@@ -196,6 +196,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
+    // Форматирование цены в окне "Добавить к цене покупки"
+    const addPriceAmountInput = document.getElementById('addPriceAmount');
+    if (addPriceAmountInput) {
+        addPriceAmountInput.addEventListener('blur', function() {
+            const rawValue = parsePrice(this.value);
+            if (rawValue) {
+                this.value = formatPrice(rawValue);
+            }
+        });
+
+        addPriceAmountInput.addEventListener('focus', function() {
+            const rawValue = parsePrice(this.value);
+            this.value = rawValue;
+            this.select();
+        });
+    }
+
     // Загрузка расходов при открытии модального окна
     const openExpenseBtn = document.getElementById('openExpenseBtn');
     if (openExpenseBtn) {

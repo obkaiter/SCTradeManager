@@ -390,11 +390,15 @@ function openAddPriceModal(cell) {
     newPriceSpan.textContent = '';
 
     // Обновляем новую цену при вводе
-    amountInput.addEventListener('input', function() {
-        const addAmount = parseInt(parsePrice(this.value)) || 0;
+    const updateNewPrice = function() {
+        const addAmount = parseInt(parsePrice(amountInput.value)) || 0;
         const newPrice = currentPriceNum + addAmount;
         newPriceSpan.textContent = formatPrice(newPrice);
-    });
+    };
+    
+    // Удаляем предыдущие обработчики, чтобы не дублировались
+    amountInput.removeEventListener('input', updateNewPrice);
+    amountInput.addEventListener('input', updateNewPrice);
 
     // Создаем модальное окно Bootstrap
     const bsModal = new bootstrap.Modal(modal);
@@ -434,11 +438,11 @@ function openAddPriceModal(cell) {
         .catch(error => console.error('Error:', error))
         .finally(() => {
             bsModal.hide();
-            // Удаляем обработчик, чтобы не дублировался
-            confirmBtn.removeEventListener('click', handleConfirm);
         });
     };
 
+    // Удаляем предыдущие обработчики, чтобы не дублировались
+    confirmBtn.removeEventListener('click', handleConfirm);
     confirmBtn.addEventListener('click', handleConfirm);
     bsModal.show();
 }
