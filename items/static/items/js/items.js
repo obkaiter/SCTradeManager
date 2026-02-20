@@ -6,17 +6,18 @@
 let contextMenuCell = null;
 let contextMenu = null;
 
-// Блокировка стандартного контекстного меню браузера
-document.addEventListener('contextmenu', function(e) {
-    // Проверяем, что клик по ячейке с ценой покупки
-    const target = e.target.closest('.price-cell[data-field="purchase_price"]');
-    if (target) {
-        e.preventDefault();
-        e.stopPropagation();
-        contextMenuCell = target;
-        showContextMenu(e.pageX, e.pageY);
-        return false;
-    }
+document.addEventListener('DOMContentLoaded', function() {
+    // Глобальная блокировка стандартного контекстного меню браузера для ячеек purchase_price
+    document.addEventListener('contextmenu', function(e) {
+        const target = e.target.closest('.price-cell[data-field="purchase_price"]');
+        if (target) {
+            e.preventDefault();
+            e.stopPropagation();
+            contextMenuCell = target;
+            showContextMenu(e.pageX, e.pageY);
+            return false;
+        }
+    });
 });
 
 /**
@@ -62,7 +63,7 @@ function initEditableCells(cells) {
             editInput.focus();
         });
 
-        // Форматирование при потере фокуса
+        // Форматирование при потере фокуса и сохранение
         editInput.addEventListener('blur', function() {
             if (field === 'purchase_price' || field === 'sale_price') {
                 const rawValue = parsePrice(this.value);
@@ -110,7 +111,7 @@ function saveCellValue(cell) {
         newValue = parsePrice(editInput.value);
     }
 
-    // Если значение не изменилось - выходим
+    // Если значение не изменилось - закрываем режим редактирования
     if (newValue === displayValue.textContent || newValue === parsePrice(displayValue.textContent)) {
         editInput.style.display = 'none';
         displayValue.style.display = 'inline';
@@ -207,53 +208,11 @@ function updateCellDisplay(cell, row, field, data, newValue) {
     if (field === 'purchase_price' || field === 'sale_price') {
         const numValue = parseFloat(data.value) || 0;
         displayValue.textContent = numValue.toLocaleString('ru-RU') + ' ₽';
-        // Обновляем также значение в input для последующего редактирования
         if (editInput) {
             editInput.value = numValue.toLocaleString('ru-RU') + ' ₽';
         }
 
-        const profitCell = row.querySelector('.profit-cell');
-        // Проверяем, что profit существует и не пустая строка
-        if (data.profit !== undefined && data.profit !== '' && data.profit !== null) {
-            const profitValue = parseFloat(data.profit);
-            profitCell.textContent = profitValue.toLocaleString('ru-RU') + ' ₽';
-
-            profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit');
-            if (data.is_negative) {
-                profitCell.classList.add('negative-profit');
-            } else if (data.profit > 0) {
-                profitCell.classList.add('positive-profit');
-            }
-        } else if (field === 'sale_price' && newValue === '') {
-            const purchasePriceCell = row.querySelector('[data-field="purchase_price"]');
-            const purchasePrice = parsePrice(purchasePriceCell.querySelector('.display-value').textContent);
-            const profitCell = row.querySelector('.profit-cell');
-            profitCell.textContent = '-' + formatPrice(purchasePrice);
-            profitCell.classList.remove('negative-profit', 'positive-profit');
-            profitCell.classList.add('no-sale-profit');
-        } else if (field === 'purchase_price') {
-            // При изменении цены покупки пересчитываем прибыль
-            const salePriceCell = row.querySelector('[data-field="sale_price"]');
-            const salePriceText = salePriceCell?.querySelector('.display-value')?.textContent || '';
-            const salePrice = parseInt(parsePrice(salePriceText)) || null;
-            
-            if (salePrice === null || salePriceText === '') {
-                // Товар не продан - прибыль = -purchase_price
-                profitCell.textContent = '-' + formatPrice(numValue);
-                profitCell.classList.remove('negative-profit', 'positive-profit');
-                profitCell.classList.add('no-sale-profit');
-            } else {
-                // Товар продан - прибыль = sale_price - purchase_price
-                const profit = salePrice - numValue;
-                profitCell.textContent = profit.toLocaleString('ru-RU') + ' ₽';
-                profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit');
-                if (profit < 0) {
-                    profitCell.classList.add('negative-profit');
-                } else if (profit > 0) {
-                    profitCell.classList.add('positive-profit');
-                }
-            }
-        }
+        updateProfitCell(row, field, numValue, data, newValue);
     } else if (field === 'purchase_date' || field === 'sale_date') {
         if (data.value) {
             const date = new Date(data.value);
@@ -263,7 +222,6 @@ function updateCellDisplay(cell, row, field, data, newValue) {
                 year: '2-digit'
             });
             displayValue.textContent = formatted;
-            // Обновляем также значение в input
             if (editInput) {
                 editInput.value = data.value;
             }
@@ -275,9 +233,65 @@ function updateCellDisplay(cell, row, field, data, newValue) {
         }
     } else {
         displayValue.textContent = data.value || '';
-        // Обновляем также значение в input
         if (editInput) {
             editInput.value = data.value || '';
+        }
+    }
+}
+
+/**
+ * Обновление ячейки прибыли
+ * @param {HTMLElement} row - Строка таблицы
+ * @param {string} field - Изменённое поле
+ * @param {number} numValue - Числовое значение цены
+ * @param {Object} data - Данные от сервера
+ * @param {string} newValue - Новое значение
+ */
+function updateProfitCell(row, field, numValue, data, newValue) {
+    const profitCell = row.querySelector('.profit-cell');
+
+    // Если сервер вернул прибыль - используем её
+    if (data.profit !== undefined && data.profit !== '' && data.profit !== null) {
+        const profitValue = parseFloat(data.profit);
+        profitCell.textContent = profitValue.toLocaleString('ru-RU') + ' ₽';
+        profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit');
+        if (data.is_negative) {
+            profitCell.classList.add('negative-profit');
+        } else if (data.profit > 0) {
+            profitCell.classList.add('positive-profit');
+        }
+        return;
+    }
+
+    // Товар не продан (sale_price пустой)
+    if (field === 'sale_price' && newValue === '') {
+        profitCell.textContent = '-' + formatPrice(numValue);
+        profitCell.classList.remove('negative-profit', 'positive-profit');
+        profitCell.classList.add('no-sale-profit');
+        return;
+    }
+
+    // Изменение цены покупки
+    if (field === 'purchase_price') {
+        const salePriceCell = row.querySelector('[data-field="sale_price"]');
+        const salePriceText = salePriceCell?.querySelector('.display-value')?.textContent || '';
+        const salePrice = parseInt(parsePrice(salePriceText)) || null;
+
+        if (salePrice === null || salePriceText === '') {
+            // Товар не продан
+            profitCell.textContent = '-' + formatPrice(numValue);
+            profitCell.classList.remove('negative-profit', 'positive-profit');
+            profitCell.classList.add('no-sale-profit');
+        } else {
+            // Товар продан
+            const profit = salePrice - numValue;
+            profitCell.textContent = profit.toLocaleString('ru-RU') + ' ₽';
+            profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit');
+            if (profit < 0) {
+                profitCell.classList.add('negative-profit');
+            } else if (profit > 0) {
+                profitCell.classList.add('positive-profit');
+            }
         }
     }
 }
@@ -292,7 +306,7 @@ function initContextMenu() {
     const editItem = document.getElementById('ctxMenuEdit');
     const addItem = document.getElementById('ctxMenuAdd');
 
-    // Пункт "Изменить" - открывает стандартное редактирование
+    // Пункт "Изменить"
     editItem.addEventListener('click', function(e) {
         e.stopPropagation();
         hideContextMenu();
@@ -307,7 +321,7 @@ function initContextMenu() {
         }
     });
 
-    // Пункт "Добавить" - открывает модальное окно
+    // Пункт "Добавить"
     addItem.addEventListener('click', function(e) {
         e.stopPropagation();
         hideContextMenu();
@@ -316,7 +330,7 @@ function initContextMenu() {
         }
     });
 
-    // Закрытие контекстного меню при клике в любом месте
+    // Закрытие контекстного меню при клике вне его
     document.addEventListener('click', function() {
         hideContextMenu();
     });
@@ -370,9 +384,7 @@ function openAddPriceModal(cell) {
     const displayValue = cell.querySelector('.display-value');
     if (!displayValue) return;
 
-    const currentPriceText = displayValue.textContent;
-    const currentPrice = parsePrice(currentPriceText);
-    const currentPriceNum = parseInt(currentPrice) || 0;
+    const currentPrice = parseInt(parsePrice(displayValue.textContent)) || 0;
 
     const modal = document.getElementById('addPurchasePriceModal');
     const currentPriceSpan = document.getElementById('currentPurchasePrice');
@@ -383,35 +395,33 @@ function openAddPriceModal(cell) {
     if (!modal || !currentPriceSpan || !newPriceSpan || !amountInput || !confirmBtn) return;
 
     // Отображаем текущую цену
-    currentPriceSpan.textContent = formatPrice(currentPriceNum);
+    currentPriceSpan.textContent = formatPrice(currentPrice);
 
     // Сбрасываем поле ввода
     amountInput.value = '';
     newPriceSpan.textContent = '';
 
     // Обновляем новую цену при вводе
-    const updateNewPrice = function() {
+    const updateNewPrice = () => {
         const addAmount = parseInt(parsePrice(amountInput.value)) || 0;
-        const newPrice = currentPriceNum + addAmount;
+        const newPrice = currentPrice + addAmount;
         newPriceSpan.textContent = formatPrice(newPrice);
     };
-    
-    // Удаляем предыдущие обработчики, чтобы не дублировались
+
     amountInput.removeEventListener('input', updateNewPrice);
     amountInput.addEventListener('input', updateNewPrice);
 
-    // Создаем модальное окно Bootstrap
     const bsModal = new bootstrap.Modal(modal);
 
     // Обработчик кнопки "Добавить"
-    const handleConfirm = function() {
+    const handleConfirm = () => {
         const addAmount = parseInt(parsePrice(amountInput.value)) || 0;
         if (addAmount === 0) {
             bsModal.hide();
             return;
         }
 
-        const newPrice = currentPriceNum + addAmount;
+        const newPrice = currentPrice + addAmount;
         const row = cell.closest('tr');
         const itemId = row?.dataset.itemId;
 
@@ -420,7 +430,6 @@ function openAddPriceModal(cell) {
             return;
         }
 
-        // Отправляем запрос на сервер
         fetch(`/items/${itemId}/update/`, {
             method: 'POST',
             headers: {
@@ -441,7 +450,6 @@ function openAddPriceModal(cell) {
         });
     };
 
-    // Удаляем предыдущие обработчики, чтобы не дублировались
     confirmBtn.removeEventListener('click', handleConfirm);
     confirmBtn.addEventListener('click', handleConfirm);
     bsModal.show();

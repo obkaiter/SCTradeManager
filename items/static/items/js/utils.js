@@ -42,3 +42,37 @@ function getCookie(name) {
     }
     return cookieValue;
 }
+
+/**
+ * Инициализация форматирования цены для поля ввода
+ * @param {HTMLInputElement} input - Поле ввода
+ */
+function initPriceFormatting(input) {
+    if (!input) return;
+
+    input.addEventListener('blur', function() {
+        const rawValue = parsePrice(this.value);
+        if (rawValue) {
+            this.value = formatPrice(rawValue);
+        }
+    });
+
+    input.addEventListener('focus', function() {
+        const rawValue = parsePrice(this.value);
+        this.value = rawValue;
+        this.select();
+    });
+}
+
+/**
+ * Инициализация форматирования цен для нескольких полей
+ * @param {string[]} inputIds - Массив ID полей ввода
+ */
+function initPriceFields(inputIds) {
+    inputIds.forEach(id => {
+        const input = document.getElementById(id);
+        if (input) {
+            initPriceFormatting(input);
+        }
+    });
+}

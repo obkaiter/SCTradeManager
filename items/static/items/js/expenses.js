@@ -11,7 +11,7 @@ function loadExpenses() {
         .then(data => {
             const tbody = document.getElementById('expenseListBody');
             if (!tbody) return;
-            
+
             tbody.innerHTML = '';
 
             if (!data.expenses || data.expenses.length === 0) {
@@ -19,32 +19,38 @@ function loadExpenses() {
                 return;
             }
 
+            // Используем DocumentFragment для эффективной вставки
+            const fragment = document.createDocumentFragment();
+
             data.expenses.forEach(exp => {
+                const tr = document.createElement('tr');
+
                 const date = new Date(exp.date).toLocaleDateString('ru-RU', {
                     day: '2-digit',
                     month: '2-digit',
                     year: '2-digit'
                 });
-                const row = `
-                    <tr>
-                        <td>${date}</td>
-                        <td>${formatPrice(exp.amount)}</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary edit-expense-btn"
-                                data-id="${exp.id}"
-                                data-date="${exp.date}"
-                                data-amount="${exp.amount}">
-                                ✎
-                            </button>
-                            <button class="btn btn-sm btn-danger delete-expense-btn" data-id="${exp.id}">
-                                &times;
-                            </button>
-                        </td>
-                    </tr>
+
+                tr.innerHTML = `
+                    <td>${date}</td>
+                    <td>${formatPrice(exp.amount)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary edit-expense-btn"
+                            data-id="${exp.id}"
+                            data-date="${exp.date}"
+                            data-amount="${exp.amount}">
+                            ✎
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-expense-btn" data-id="${exp.id}">
+                            &times;
+                        </button>
+                    </td>
                 `;
-                tbody.innerHTML += row;
+
+                fragment.appendChild(tr);
             });
 
+            tbody.appendChild(fragment);
             initExpenseButtons();
         })
         .catch(error => console.error('Error loading expenses:', error));
@@ -64,7 +70,7 @@ function initExpenseButtons() {
             const editId = document.getElementById('editExpenseId');
             const editDate = document.getElementById('editExpenseDate');
             const editAmount = document.getElementById('editExpenseAmount');
-            
+
             if (editId) editId.value = id;
             if (editDate) editDate.value = date;
             if (editAmount) editAmount.value = parsePrice(amount);
@@ -100,72 +106,85 @@ function initExpenseButtons() {
 }
 
 /**
- * Инициализация формы добавления расходов
+ * Инициализация форм расходов
  */
 function initExpenseForms() {
+    initAddExpenseForm();
+    initEditExpenseForm();
+}
+
+/**
+ * Инициализация формы добавления расхода
+ */
+function initAddExpenseForm() {
     const addForm = document.getElementById('addExpenseForm');
-    if (addForm) {
-        addForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
+    if (!addForm) return;
 
-            const amountInput = document.getElementById('addExpenseAmount');
-            if (amountInput) {
-                formData.set('amount', parsePrice(amountInput.value));
+    addForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        const amountInput = document.getElementById('addExpenseAmount');
+        if (amountInput) {
+            formData.set('amount', parsePrice(amountInput.value));
+        }
+
+        fetch("/items/expenses/create/", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                this.reset();
+                loadExpenses();
+                location.reload();
             }
+        })
+        .catch(error => console.error('Error:', error));
+    });
+}
 
-            fetch("/items/expenses/create/", {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    this.reset();
-                    loadExpenses();
-                    location.reload();
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        });
-    }
-
+/**
+ * Инициализация формы редактирования расхода
+ */
+function initEditExpenseForm() {
     const editForm = document.getElementById('editExpenseForm');
-    if (editForm) {
-        editForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const formData = new FormData(this);
-            
-            const amountInput = document.getElementById('editExpenseAmount');
-            if (amountInput) {
-                formData.set('amount', parsePrice(amountInput.value));
+    if (!editForm) return;
+
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+
+        const amountInput = document.getElementById('editExpenseAmount');
+        if (amountInput) {
+            formData.set('amount', parsePrice(amountInput.value));
+        }
+
+        const expenseId = document.getElementById('editExpenseId')?.value;
+        if (!expenseId) return;
+
+        fetch(`/items/expenses/${expenseId}/update/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const editModal = bootstrap.Modal.getInstance(document.getElementById('editExpenseModal'));
+                if (editModal) editModal.hide();
+                loadExpenses();
+                location.reload();
             }
-
-            const expenseId = document.getElementById('editExpenseId')?.value;
-            if (!expenseId) return;
-
-            fetch(`/items/expenses/${expenseId}/update/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': getCookie('csrftoken'),
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    const editModal = bootstrap.Modal.getInstance(document.getElementById('editExpenseModal'));
-                    if (editModal) editModal.hide();
-                    loadExpenses();
-                    location.reload();
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        });
-    }
+        })
+        .catch(error => console.error('Error:', error));
+    });
 }
