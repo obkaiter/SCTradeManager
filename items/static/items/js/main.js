@@ -140,6 +140,26 @@ function setupDateFilterButtons(hideSoldState) {
             window.location.href = url;
         });
     }
+
+    const weekBtn = document.getElementById('weekBtn');
+    if (weekBtn) {
+        weekBtn.addEventListener('click', function() {
+            const today = new Date();
+            const lastWeek = new Date(today);
+            lastWeek.setDate(today.getDate() - 7);
+            
+            const dateFrom = lastWeek.toISOString().split('T')[0];
+            const dateTo = today.toISOString().split('T')[0];
+            
+            const hideSold = hideSoldState?.value || 'false';
+            const nameFilter = document.getElementById('filterNameInput')?.value || '';
+            let url = '?date_from=' + dateFrom + '&date_to=' + dateTo + '&hide_sold=' + hideSold;
+            if (nameFilter) {
+                url += '&name=' + encodeURIComponent(nameFilter);
+            }
+            window.location.href = url;
+        });
+    }
 }
 
 /**
