@@ -113,9 +113,9 @@ function setupDateFilterButtons(hideSoldState) {
     const showAllBtn = document.getElementById('showAllBtn');
     if (showAllBtn) {
         showAllBtn.addEventListener('click', function() {
-            const today = new Date().toISOString().split('T')[0];
             const hideSold = hideSoldState?.value || 'false';
-            window.location.href = '?date_from=2020-01-01&date_to=' + today + '&hide_sold=' + hideSold;
+            // Показываем все предметы с 2020 года до 2099 года
+            window.location.href = '?date_from=2020-01-01&date_to=2099-12-31&hide_sold=' + hideSold;
         });
     }
 
@@ -236,7 +236,9 @@ function initAddItemSubmit() {
                 if (dateInput) {
                     dateInput.value = new Date().toISOString().split('T')[0];
                 }
-                location.reload();
+                // Перезагружаем страницу с сохранением текущих параметров фильтра
+                const urlParams = new URLSearchParams(window.location.search);
+                window.location.href = '?' + urlParams.toString();
             }
         })
         .catch(error => console.error('Error:', error));

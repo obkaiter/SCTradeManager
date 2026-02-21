@@ -14,7 +14,7 @@ from items.services import ItemService
 def add_item(request):
     """Добавление нового предмета (AJAX)."""
     form = ItemForm(request.POST)
-    
+
     if form.is_valid():
         item = form.save(commit=False)
         if not item.purchase_date:
@@ -22,9 +22,20 @@ def add_item(request):
         item.save()
 
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({'success': True})
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': item.id,
+                    'name': item.name,
+                    'purchase_price': item.purchase_price,
+                    'sale_price': item.sale_price,
+                    'purchase_date': item.purchase_date.isoformat() if item.purchase_date else None,
+                    'sale_date': item.sale_date.isoformat() if item.sale_date else None,
+                }
+            })
 
-    return JsonResponse({'error': 'Invalid form data'}, status=400)
+    errors = form.errors.get_json_data() if hasattr(form.errors, 'get_json_data') else form.errors
+    return JsonResponse({'error': 'Invalid form data', 'errors': errors}, status=400)
 
 
 @require_POST
