@@ -7,50 +7,51 @@
 <!-- Скрытое поле для хранения состояния hide_sold -->
 <input type="hidden" id="hideSoldState" value="{{ hide_sold|yesno:'true,false' }}">
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h1>Список предметов</h1>
-    <div class="btn-group" role="group">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+<!-- Верхний блок: итоги слева, кнопки справа -->
+<div class="summary-grid mb-3">
+    <!-- Блок с итогами -->
+    <div class="summary-block">
+        <div class="summary-row">
+            <span class="summary-label">Суммарная прибыль за период: {{ date_from|date:"d.m.y" }} - {{ date_to|date:"d.m.y" }}</span>
+            <span class="summary-value fs-5 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% endif %}">
+                {{ total_profit|format_price }}
+            </span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-label">Накладные расходы:</span>
+            <span class="summary-value fs-6 text-danger">
+                - {{ total_expenses|format_price }}
+            </span>
+        </div>
+        <div class="summary-row">
+            <span class="summary-label">Зарезервировано:</span>
+            <span class="summary-value fs-6 text-secondary">
+                {{ reserved_amount|format_price }}
+            </span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row">
+            <span class="summary-label"><strong>Чистая прибыль:</strong></span>
+            <span class="summary-value fs-5 {% if net_profit < 0 %}text-danger{% elif net_profit > 0 %}text-success{% endif %}">
+                {{ net_profit|format_price }}
+            </span>
+        </div>
+    </div>
+    
+    <!-- Блок с кнопками -->
+    <div class="buttons-block">
+        <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addItemModal">
             <i class="bi bi-plus-lg"></i> Добавить предмет
         </button>
-        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#dateFilterModal">
+        <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#dateFilterModal">
             Фильтр
         </button>
-        <button type="button" class="btn btn-secondary" id="toggleSoldBtn">
+        <button type="button" class="btn btn-secondary btn-sm" id="toggleSoldBtn">
             <i class="bi bi-eye-slash"></i> Скрыть проданные
         </button>
-        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#expenseModal" id="openExpenseBtn">
+        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#expenseModal" id="openExpenseBtn">
             Накладные расходы
         </button>
-    </div>
-</div>
-
-<!-- Суммарная прибыль -->
-<div class="alert alert-info d-flex flex-column mb-3">
-    <div class="d-flex justify-content-between align-items-center">
-        <span><strong>Суммарная прибыль за период: {{ date_from|date:"d.m.y" }} - {{ date_to|date:"d.m.y" }}</strong></span>
-        <span class="fs-4 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% endif %}">
-            {{ total_profit|format_price }}
-        </span>
-    </div>
-    <div class="d-flex justify-content-between align-items-center mt-2">
-        <span><strong>Накладные расходы:</strong></span>
-        <span class="fs-5 text-danger">
-            - {{ total_expenses|format_price }}
-        </span>
-    </div>
-    <div class="d-flex justify-content-between align-items-center mt-2">
-        <span><strong>Зарезервировано:</strong></span>
-        <span class="fs-5 text-secondary">
-            {{ reserved_amount|format_price }}
-        </span>
-    </div>
-    <hr class="my-2">
-    <div class="d-flex justify-content-between align-items-center">
-        <span><strong>Чистая прибыль:</strong></span>
-        <span class="fs-4 {% if net_profit < 0 %}text-danger{% elif net_profit > 0 %}text-success{% endif %}">
-            {{ net_profit|format_price }}
-        </span>
     </div>
 </div>
 

@@ -161,6 +161,55 @@
             padding: 14px 18px;
             font-size: 15px;
         }
+
+        /* Summary grid layout */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 12px;
+            align-items: stretch;
+        }
+        .summary-block {
+            background: linear-gradient(to right, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #90caf9;
+            border-radius: 6px;
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 3px 0;
+        }
+        .summary-label {
+            font-size: 14px;
+            color: #333;
+        }
+        .summary-value {
+            font-weight: 600;
+            white-space: nowrap;
+            margin-left: 12px;
+        }
+        .summary-divider {
+            border-top: 1px solid #90caf9;
+            margin: 6px 0;
+        }
+        .buttons-block {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            justify-content: center;
+        }
+        .buttons-block .btn {
+            padding: 8px 14px;
+            font-size: 13px;
+            white-space: nowrap;
+            border-radius: 4px;
+            margin: 0;
+        }
         
         /* Modal styling */
         .modal-header {
