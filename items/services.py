@@ -11,15 +11,16 @@ class ItemService:
     """Сервис для работы с предметами."""
 
     @staticmethod
-    def get_items_filtered(date_from=None, date_to=None, hide_sold=False):
+    def get_items_filtered(date_from=None, date_to=None, hide_sold=False, name_filter=''):
         """
         Получить отфильтрованный список предметов.
-        
+
         Args:
             date_from: Дата начала периода
             date_to: Дата конца периода
             hide_sold: Скрыть проданные предметы
-            
+            name_filter: Фильтр по названию предмета (частичное совпадение, без учёта регистра)
+
         Returns:
             QuerySet предметов
         """
@@ -31,6 +32,8 @@ class ItemService:
             items = items.filter(purchase_date__lte=date_to)
         if hide_sold:
             items = items.filter(sale_price__isnull=True)
+        if name_filter:
+            items = items.filter(name__icontains=name_filter)
 
         return items
 

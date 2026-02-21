@@ -85,6 +85,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Кнопки фильтра по дате
     setupDateFilterButtons(hideSoldState);
 
+    // Инициализация модального окна фильтра
+    initDateFilterModal();
+
     // Удаление предмета с модальным окном
     initDeleteItem();
 
@@ -114,8 +117,13 @@ function setupDateFilterButtons(hideSoldState) {
     if (showAllBtn) {
         showAllBtn.addEventListener('click', function() {
             const hideSold = hideSoldState?.value || 'false';
+            const nameFilter = document.getElementById('filterNameInput')?.value || '';
             // Показываем все предметы с 2020 года до 2099 года
-            window.location.href = '?date_from=2020-01-01&date_to=2099-12-31&hide_sold=' + hideSold;
+            let url = '?date_from=2020-01-01&date_to=2099-12-31&hide_sold=' + hideSold;
+            if (nameFilter) {
+                url += '&name=' + encodeURIComponent(nameFilter);
+            }
+            window.location.href = url;
         });
     }
 
@@ -124,7 +132,12 @@ function setupDateFilterButtons(hideSoldState) {
         todayBtn.addEventListener('click', function() {
             const today = new Date().toISOString().split('T')[0];
             const hideSold = hideSoldState?.value || 'false';
-            window.location.href = '?date_from=' + today + '&date_to=' + today + '&hide_sold=' + hideSold;
+            const nameFilter = document.getElementById('filterNameInput')?.value || '';
+            let url = '?date_from=' + today + '&date_to=' + today + '&hide_sold=' + hideSold;
+            if (nameFilter) {
+                url += '&name=' + encodeURIComponent(nameFilter);
+            }
+            window.location.href = url;
         });
     }
 }
@@ -242,5 +255,26 @@ function initAddItemSubmit() {
             }
         })
         .catch(error => console.error('Error:', error));
+    });
+}
+
+/**
+ * Инициализация модального окна фильтра
+ */
+function initDateFilterModal() {
+    const dateFilterModal = document.getElementById('dateFilterModal');
+    const filterNameInput = document.getElementById('filterNameInput');
+
+    if (!dateFilterModal || !filterNameInput) return;
+
+    // Отображение текущего значения при открытии модального окна
+    dateFilterModal.addEventListener('show.bs.modal', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        filterNameInput.value = urlParams.get('name') || '';
+    });
+
+    // Сброс поля при закрытии модального окна
+    dateFilterModal.addEventListener('hidden.bs.modal', function() {
+        filterNameInput.value = '';
     });
 }

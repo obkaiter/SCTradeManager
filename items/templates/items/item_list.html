@@ -14,7 +14,7 @@
             <i class="bi bi-plus-lg"></i> Добавить предмет
         </button>
         <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#dateFilterModal">
-            Фильтр по дате
+            Фильтр
         </button>
         <button type="button" class="btn btn-secondary" id="toggleSoldBtn">
             <i class="bi bi-eye-slash"></i> Скрыть проданные
@@ -253,10 +253,14 @@
         <div class="modal-content">
             <form id="dateFilterModalForm">
                 <div class="modal-header">
-                    <h5 class="modal-title">Фильтр по периоду</h5>
+                    <h5 class="modal-title">Фильтр</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Название:</label>
+                        <input type="text" name="name" id="filterNameInput" class="form-control" placeholder="Введите название предмета">
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Дата покупки с:</label>
                         <input type="date" name="date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}" required>

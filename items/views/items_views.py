@@ -14,9 +14,10 @@ def item_list(request):
     date_to = request.GET.get('date_to', timezone.now().date().isoformat())
     hide_sold = request.GET.get('hide_sold', 'false') == 'true'
     sort_by = request.GET.get('sort', '-purchase_date')
+    name_filter = request.GET.get('name', '')
 
     # Фильтруем предметы
-    items = ItemService.get_items_filtered(date_from, date_to, hide_sold)
+    items = ItemService.get_items_filtered(date_from, date_to, hide_sold, name_filter)
     
     # Сортируем
     items = ItemService.sort_items(items, sort_by)
