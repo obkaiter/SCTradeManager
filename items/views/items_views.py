@@ -3,8 +3,54 @@ Views для работы с предметами.
 """
 from django.shortcuts import render
 from django.utils import timezone
-from datetime import datetime
+from datetime import datetime, timedelta
+from django.db.models import Sum, F
+from items.models import Item
 from items.services import ItemService, ExpenseService
+
+
+def analytics(request):
+    """Страница аналитики с диаграммой прибыли по дням."""
+    # Получаем параметры фильтрации
+    date_from = request.GET.get('date_from', (timezone.now().date() - timedelta(days=30)).isoformat())
+    date_to = request.GET.get('date_to', timezone.now().date().isoformat())
+
+    # Получаем прибыль по дням продажи
+    daily_profit = Item.objects.filter(
+        sale_date__isnull=False,
+        sale_date__gte=date_from,
+        sale_date__lte=date_to
+    ).annotate(
+        profit=F('sale_price') - F('purchase_price')
+    ).values('sale_date').annotate(
+        total_profit=Sum('profit')
+    ).order_by('sale_date')
+
+    # Преобразуем в формат для Chart.js
+    labels = []
+    data = []
+    for entry in daily_profit:
+        labels.append(entry['sale_date'].strftime('%d.%m.%Y'))
+        data.append(entry['total_profit'] or 0)
+
+    # Считаем общую прибыль за период
+    total_profit = sum(data)
+
+    # Преобразуем строки в datetime для шаблона
+    try:
+        date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+        date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+    except (ValueError, TypeError):
+        date_from_obj = timezone.now() - timedelta(days=30)
+        date_to_obj = timezone.now()
+
+    return render(request, 'items/analytics.html', {
+        'labels': labels,
+        'data': data,
+        'date_from': date_from_obj,
+        'date_to': date_to_obj,
+        'total_profit': total_profit,
+    })
 
 
 def item_list(request):

@@ -8,12 +8,14 @@ from items.views import (
     expense_create,
     expense_update,
     expense_delete,
+    analytics,
 )
 
 app_name = 'items'
 
 urlpatterns = [
     path('', item_list, name='item_list'),
+    path('analytics/', analytics, name='analytics'),
     path('add/', add_item, name='add_item'),
     path('<int:pk>/update/', update_item, name='update_item'),
     path('<int:pk>/delete/', delete_item, name='delete_item'),

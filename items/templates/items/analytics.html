@@ -1,0 +1,124 @@
+{% extends 'items/base.html' %}
+{% load item_tags %}
+
+{% block title %}Аналитика прибыли{% endblock %}
+
+{% block content %}
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <h2>Аналитика прибыли по дням</h2>
+    <a href="{% url 'items:item_list' %}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> На главную
+    </a>
+</div>
+
+<!-- Фильтр по датам -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label mb-1">Дата с:</label>
+                <input type="date" name="date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label mb-1">Дата по:</label>
+                <input type="date" name="date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}" required>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">Применить</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Общая прибыль -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <h5 class="card-title mb-1">Общая прибыль за период: {{ date_from|date:"d.m.y" }} - {{ date_to|date:"d.m.y" }}</h5>
+        <p class="fs-3 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% else %}text-secondary{% endif %} mb-0">
+            {{ total_profit|format_price }}
+        </p>
+    </div>
+</div>
+
+<!-- Диаграмма -->
+<div class="card">
+    <div class="card-body py-2">
+        <h5 class="card-title mb-3 mt-2">Прибыль по дням</h5>
+        <div style="height: 500px;">
+            <canvas id="profitChart"></canvas>
+        </div>
+    </div>
+</div>
+
+{% if labels|length == 0 %}
+<div class="alert alert-info mt-3">
+    Нет данных о продажах за выбранный период.
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Форматирование цены с разделением на разряды и знаком рубля
+function formatPrice(value) {
+    const num = parseInt(value) || 0;
+    return num.toLocaleString('ru-RU') + ' ₽';
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('profitChart').getContext('2d');
+    
+    const labels = {{ labels|safe }};
+    const data = {{ data|safe }};
+    
+    // Генерируем цвета для столбцов (зелёный для прибыли, красный для убытка)
+    const backgroundColors = data.map(value => value >= 0 ? 'rgba(81, 207, 102, 0.7)' : 'rgba(255, 107, 107, 0.7)');
+    const borderColors = data.map(value => value >= 0 ? 'rgb(81, 207, 102)' : 'rgb(255, 107, 107)');
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Прибыль',
+                data: data,
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Прибыль: ' + formatPrice(context.parsed.x);
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Прибыль'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Дата'
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
