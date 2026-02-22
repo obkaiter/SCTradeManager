@@ -71,8 +71,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const data = {{ data|safe }};
     
     // Генерируем цвета для столбцов (зелёный для прибыли, красный для убытка)
-    const backgroundColors = data.map(value => value >= 0 ? 'rgba(81, 207, 102, 0.7)' : 'rgba(255, 107, 107, 0.7)');
-    const borderColors = data.map(value => value >= 0 ? 'rgb(81, 207, 102)' : 'rgb(255, 107, 107)');
+    const backgroundColors = data.map(value => value >= 0 ? 'rgba(39, 174, 96, 0.8)' : 'rgba(218, 68, 83, 0.8)');
+    const borderColors = data.map(value => value >= 0 ? 'rgb(39, 174, 96)' : 'rgb(218, 68, 83)');
     
     new Chart(ctx, {
         type: 'bar',
@@ -99,7 +99,12 @@ document.addEventListener('DOMContentLoaded', function() {
                         label: function(context) {
                             return 'Прибыль: ' + formatPrice(context.parsed.x);
                         }
-                    }
+                    },
+                    backgroundColor: 'rgba(35, 38, 41, 0.95)',
+                    titleColor: '#eff0f1',
+                    bodyColor: '#eff0f1',
+                    borderColor: '#31363b',
+                    borderWidth: 1
                 }
             },
             scales: {
@@ -107,13 +112,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     beginAtZero: true,
                     title: {
                         display: true,
-                        text: 'Прибыль'
+                        text: 'Прибыль',
+                        color: '#eff0f1'
+                    },
+                    ticks: {
+                        color: '#b0b0b0'
+                    },
+                    grid: {
+                        color: '#31363b'
                     }
                 },
                 y: {
                     title: {
                         display: true,
-                        text: 'Дата'
+                        text: 'Дата',
+                        color: '#eff0f1'
+                    },
+                    ticks: {
+                        color: '#b0b0b0'
+                    },
+                    grid: {
+                        color: '#31363b'
                     }
                 }
             }

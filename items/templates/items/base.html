@@ -7,39 +7,65 @@
     <title>{% block title %}Менеджер предметов{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        :root {
+            /* KDE Plasma Dark Theme Colors */
+            --bg-primary: #232629;
+            --bg-secondary: #1c1e20;
+            --bg-card: #232629;
+            --bg-table: #232629;
+            --bg-modal: #232629;
+            --bg-input: #1c1e20;
+            --bg-hover: #2d3136;
+            --bg-header: #2d3136;
+            --bg-button: #31363b;
+            --text-primary: #eff0f1;
+            --text-secondary: #b0b0b0;
+            --text-muted: #7f8c8d;
+            --border-color: #31363b;
+            --accent-blue: #3daee9;
+            --accent-info: #1abc9c;
+            --accent-success: #27ae60;
+            --accent-warning: #f39c12;
+            --accent-danger: #da4453;
+            --gradient-info: linear-gradient(to right, #232629 0%, #2d3136 100%);
+            --gradient-header: linear-gradient(to right, #232629 0%, #2d3136 100%);
+            --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
         body {
             font-family: 'Calibri', 'Candara', 'Segoe', 'Segoe UI', Optima, Arial, sans-serif;
             font-size: 18px;
-            background-color: #f0f0f0;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
         }
         .container {
             max-width: 100%;
             padding: 20px;
         }
         .negative-profit {
-            background-color: #ff6b6b !important;
-            color: white;
+            background-color: var(--accent-danger) !important;
+            color: white !important;
         }
         .positive-profit {
-            background-color: #51cf66 !important;
-            color: white;
+            background-color: var(--accent-success) !important;
+            color: white !important;
         }
         .no-sale-profit {
-            background-color: #495057 !important;
-            color: white;
+            background-color: var(--bg-table) !important;
+            color: var(--text-primary) !important;
         }
         .editable-cell {
             cursor: pointer;
             transition: background-color 0.1s;
         }
         .editable-cell:hover {
-            background-color: #e8f4fd;
+            background-color: transparent;
         }
         .copy-on-click {
             position: relative;
         }
         .copy-on-click.copied {
-            background-color: #c8e6c9 !important;
+            background-color: #2d4a3a !important;
         }
         .copy-on-click.copied::after {
             content: '✓';
@@ -47,12 +73,12 @@
             right: 8px;
             top: 50%;
             transform: translateY(-50%);
-            color: #2e7d32;
+            color: #27ae60;
             font-weight: bold;
             font-size: 1.2em;
         }
         .editable-cell input {
-            border: 2px solid #2196f3;
+            border: 2px solid var(--border-color);
             border-radius: 0;
             padding: 2px 6px;
             width: 100%;
@@ -64,17 +90,37 @@
             top: 0;
             height: 100%;
             margin: 0;
+            background-color: var(--bg-input);
+            color: var(--text-primary);
+        }
+        .editable-cell input[type="date"] {
+            background-color: var(--bg-input);
+            color: var(--text-primary);
+        }
+        .editable-cell input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(0.8);
+            cursor: pointer;
         }
         .editable-cell {
             position: relative;
+            color: var(--text-primary);
+        }
+        .editable-cell .display-value {
+            color: var(--text-primary);
         }
         .editable-cell input:focus {
             outline: none;
-            border-color: #1976d2;
-            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 0 2px rgba(61, 174, 233, 0.2);
         }
         h1, h2, h3, h4, h5, h6 {
             font-family: 'Calibri', 'Candara', 'Segoe', 'Segoe UI', Optima, Arial, sans-serif;
+            color: var(--text-primary);
+        }
+        h6 {
+            color: var(--text-primary);
+            margin-top: 0.5rem;
+            margin-bottom: 0.75rem;
         }
         .sortable {
             cursor: pointer;
@@ -82,29 +128,29 @@
             position: relative;
         }
         .sortable:hover {
-            background-color: #d0d0d0;
+            background-color: var(--bg-hover);
         }
         .sort-icon {
             margin-left: 5px;
             font-size: 0.7em;
-            color: #666;
+            color: var(--text-secondary);
         }
-        
+
         /* Excel-like table styling */
         .table-excel {
-            background-color: white;
+            background-color: var(--bg-table) !important;
             border-collapse: separate;
             border-spacing: 0;
             width: 100%;
             font-size: 18px;
-            border: 2px solid #a0a0a0;
+            border: 2px solid var(--border-color);
         }
         .table-excel thead th {
-            background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
-            border: 1px solid #a0a0a0;
+            background: var(--gradient-header) !important;
+            border: 1px solid var(--border-color);
             padding: 4px 8px;
             font-weight: 600;
-            color: #333;
+            color: var(--text-primary) !important;
             text-align: center;
             position: sticky;
             top: 0;
@@ -112,19 +158,17 @@
             font-size: 18px;
         }
         .table-excel tbody td {
-            border: 1px solid #d0d0d0;
+            border: 1px solid var(--border-color);
             padding: 2px 8px;
             vertical-align: middle;
             font-size: 18px;
+            color: var(--text-primary) !important;
         }
-        .table-excel tbody tr:hover {
-            background-color: #e8f4fd;
+        .table-excel tbody td:not(.profit-cell) {
+            background-color: var(--bg-table) !important;
         }
-        .table-excel tbody tr:nth-child(even) {
-            background-color: #fafafa;
-        }
-        .table-excel tbody tr:nth-child(even):hover {
-            background-color: #e8f4fd;
+        .table-excel tbody tr:nth-child(even) td:not(.profit-cell) {
+            background-color: rgba(255, 255, 255, 0.02) !important;
         }
         .table-excel td.text-center,
         .table-excel th.text-center {
@@ -137,11 +181,19 @@
         .profit-cell {
             font-weight: 600;
             text-align: right;
+            color: var(--text-primary) !important;
         }
         .price-cell {
             text-align: right;
+            color: var(--text-primary) !important;
         }
-        
+        .text-center {
+            color: var(--text-primary) !important;
+        }
+        .text-right {
+            color: var(--text-primary) !important;
+        }
+
         /* Button group */
         .btn-group {
             display: inline-flex;
@@ -152,20 +204,21 @@
             font-size: 14px;
             padding: 10px 18px;
         }
-        
+
         /* Alert styling */
         .alert-info {
-            background: linear-gradient(to right, #e3f2fd 0%, #bbdefb 100%);
-            border: 1px solid #90caf9;
+            background: var(--gradient-info);
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 14px 18px;
             font-size: 15px;
+            color: var(--text-primary);
         }
 
         /* Summary block styling */
         .summary-block {
-            background: linear-gradient(to right, #e3f2fd 0%, #bbdefb 100%);
-            border: 1px solid #90caf9;
+            background: var(--gradient-info);
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             padding: 10px 14px;
             display: flex;
@@ -180,50 +233,72 @@
         }
         .summary-label {
             font-size: 14px;
-            color: #333;
+            color: var(--text-primary);
         }
         .summary-value {
             font-weight: 600;
             white-space: nowrap;
             margin-left: 12px;
+            color: var(--text-primary);
         }
         .summary-divider {
-            border-top: 1px solid #90caf9;
+            border-top: 1px solid var(--border-color);
             margin: 6px 0;
         }
 
         /* Modal styling */
         .modal-header {
-            background: linear-gradient(to right, #1976d2 0%, #2196f3 100%);
-            color: white;
+            background: var(--gradient-header);
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
         }
         .modal-header .btn-close {
-            filter: brightness(0) invert(1);
+            filter: brightness(1) invert(0.9);
         }
         .modal-content {
             border-radius: 8px;
-            border: none;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-card);
+            background-color: var(--bg-modal);
         }
         .modal-body {
             font-size: 15px;
+            color: var(--text-primary);
+            background-color: var(--bg-modal);
         }
         .form-control {
             font-size: 15px;
             padding: 8px 12px;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .form-control:focus {
+            background-color: var(--bg-hover);
+            border-color: var(--accent-blue);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 0.2rem rgba(61, 174, 233, 0.25);
+        }
+        .form-control::placeholder {
+            color: var(--text-muted);
         }
         .form-label {
             font-size: 14px;
             font-weight: 600;
+            color: var(--text-primary);
+        }
+        .modal-footer {
+            background-color: var(--bg-modal);
+            border-top: 1px solid var(--border-color);
         }
 
         /* Контекстное меню */
         .context-menu {
             position: absolute;
-            background: white;
-            border: 1px solid #ccc;
+            background: var(--bg-modal);
+            border: 1px solid var(--border-color);
             border-radius: 4px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: var(--shadow-card);
             z-index: 1000;
             min-width: 150px;
             display: none;
@@ -232,15 +307,100 @@
             padding: 8px 16px;
             cursor: pointer;
             transition: background-color 0.1s;
+            color: var(--text-primary);
         }
         .context-menu-item:hover {
-            background-color: #f0f0f0;
+            background-color: var(--bg-hover);
         }
         .context-menu-item:first-child {
             border-radius: 4px 4px 0 0;
         }
         .context-menu-item:last-child {
             border-radius: 0 0 4px 4px;
+        }
+
+        /* Card styling */
+        .card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .card-header {
+            background: var(--gradient-header);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .card-body {
+            color: var(--text-primary);
+        }
+        .card-title {
+            color: var(--text-primary);
+        }
+
+        /* Table responsive */
+        .table-responsive {
+            background-color: var(--bg-table);
+        }
+
+        /* Table bordered styling */
+        .table-bordered th,
+        .table-bordered td {
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+        .table-bordered thead th {
+            background-color: var(--bg-header);
+            color: var(--text-primary);
+        }
+        .table-bordered tbody td {
+            color: var(--text-primary);
+        }
+
+        /* Bootstrap button overrides for dark theme */
+        .btn-primary {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #2c9cce;
+            border-color: #2c9cce;
+        }
+        .btn-info {
+            background-color: var(--accent-info);
+            border-color: var(--accent-info);
+            color: white;
+        }
+        .btn-info:hover {
+            background-color: #16a085;
+            border-color: #16a085;
+        }
+        .btn-warning {
+            background-color: var(--accent-warning);
+            border-color: var(--accent-warning);
+            color: white;
+        }
+        .btn-warning:hover {
+            background-color: #d68910;
+            border-color: #d68910;
+        }
+        .btn-danger {
+            background-color: var(--accent-danger);
+            border-color: var(--accent-danger);
+            color: white;
+        }
+        .btn-danger:hover {
+            background-color: #c0392b;
+            border-color: #c0392b;
+        }
+        .btn-secondary {
+            background-color: var(--bg-button);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        .btn-secondary:hover {
+            background-color: var(--bg-hover);
+            border-color: var(--border-color);
         }
     </style>
     {% block extra_css %}{% endblock %}

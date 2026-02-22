@@ -115,7 +115,7 @@
                     <span class="display-value">{{ item.sale_date|date:"d.m.y"|default:"" }}</span>
                     <input type="date" class="edit-input" value="{{ item.sale_date|date:'Y-m-d'|default:'' }}" style="display:none;">
                 </td>
-                <td class="profit-cell {% if item.profit < 0 %}negative-profit{% elif item.profit > 0 %}positive-profit{% elif item.sale_price is None %}no-sale-profit{% endif %}">
+                <td class="profit-cell {% if item.sale_price is None %}no-sale-profit{% elif item.profit < 0 %}negative-profit{% elif item.profit > 0 %}positive-profit{% endif %}">
                     {% if item.sale_price is None %}-{{ item.purchase_price|format_price }}{% else %}{{ item.profit|format_price }}{% endif %}
                 </td>
                 <td class="text-center">
@@ -126,7 +126,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" class="text-center text-muted">Нет предметов в базе данных</td>
+                <td colspan="8" class="text-center" style="color: var(--text-muted);">Нет предметов в базе данных</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -161,7 +161,7 @@
                 <h6>Список расходов</h6>
                 <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
                     <table class="table table-sm table-bordered">
-                        <thead class="table-light">
+                        <thead>
                             <tr>
                                 <th>Дата</th>
                                 <th>Сумма</th>

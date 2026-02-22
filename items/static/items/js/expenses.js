@@ -15,7 +15,7 @@ function loadExpenses() {
             tbody.innerHTML = '';
 
             if (!data.expenses || data.expenses.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted">Нет расходов</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center" style="color: var(--text-muted);">Нет расходов</td></tr>';
                 return;
             }
 
