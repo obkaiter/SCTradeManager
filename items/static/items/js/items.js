@@ -69,7 +69,7 @@ function copyItemName(cell) {
     navigator.clipboard.writeText(itemName).then(function() {
         // Визуальная обратная связь
         cell.classList.add('copied');
-        showToast(`"${itemName}" скопировано в буфер`, 'success', 2000);
+        showToast(`"${itemName}" скопировано в буфер обмена`, 'success', 2000);
         setTimeout(function() {
             cell.classList.remove('copied');
         }, 800);
@@ -84,7 +84,7 @@ function copyItemName(cell) {
         try {
             document.execCommand('copy');
             cell.classList.add('copied');
-            showToast(`"${itemName}" скопировано в буфер`, 'success', 2000);
+            showToast(`"${itemName}" скопировано в буфер обмена`, 'success', 2000);
             setTimeout(function() {
                 cell.classList.remove('copied');
             }, 800);

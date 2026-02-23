@@ -572,6 +572,18 @@
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
             box-shadow: var(--shadow-card);
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            display: block !important;
+        }
+        .toast.hiding {
+            opacity: 0;
+            transform: translateX(100%);
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(0);
         }
         .toast-header {
             background: var(--gradient-header);
@@ -580,6 +592,9 @@
         }
         .toast-body {
             color: var(--text-primary);
+        }
+        .toast .btn-close {
+            filter: brightness(0) invert(1);
         }
 
         /* Плавная прокрутка */

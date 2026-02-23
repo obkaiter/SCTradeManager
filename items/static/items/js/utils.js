@@ -103,7 +103,7 @@ function showToast(message, type = 'info', duration = 3000) {
     };
 
     const toast = document.createElement('div');
-    toast.className = 'toast show';
+    toast.className = 'toast';
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
     toast.setAttribute('aria-atomic', 'true');
@@ -115,7 +115,7 @@ function showToast(message, type = 'info', duration = 3000) {
         <div class="toast-header">
             <i class="bi ${iconClass} me-2 ${type === 'error' ? 'text-danger' : type === 'success' ? 'text-success' : type === 'warning' ? 'text-warning' : 'text-info'}"></i>
             <strong class="me-auto">${title}</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Закрыть"></button>
+            <button type="button" class="btn-close" aria-label="Закрыть"></button>
         </div>
         <div class="toast-body">
             ${message}
@@ -124,28 +124,40 @@ function showToast(message, type = 'info', duration = 3000) {
 
     container.appendChild(toast);
 
-    // Автоматическое закрытие
-    setTimeout(() => {
-        toast.classList.remove('show');
-        setTimeout(() => {
-            if (toast.parentNode) {
-                toast.parentNode.removeChild(toast);
-            }
-        }, 300);
-    }, duration);
+    // Запуск анимации появления
+    requestAnimationFrame(() => {
+        toast.classList.add('show');
+    });
 
     // Закрытие по клику на кнопку
     const closeBtn = toast.querySelector('.btn-close');
     if (closeBtn) {
         closeBtn.addEventListener('click', () => {
-            toast.classList.remove('show');
-            setTimeout(() => {
-                if (toast.parentNode) {
-                    toast.parentNode.removeChild(toast);
-                }
-            }, 300);
+            hideToast(toast);
         });
     }
+
+    // Автоматическое закрытие
+    setTimeout(() => {
+        hideToast(toast);
+    }, duration);
+}
+
+/**
+ * Скрытие toast-уведомления с анимацией
+ * @param {HTMLElement} toast - Элемент уведомления
+ */
+function hideToast(toast) {
+    if (!toast || toast.classList.contains('hiding')) return;
+    
+    toast.classList.add('hiding');
+    toast.classList.remove('show');
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 300);
 }
 
 /**
