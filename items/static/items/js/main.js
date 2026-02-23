@@ -1,5 +1,6 @@
 /**
- * Основная логика страницы списка предметов.
+ * Основной скрипт страницы списка предметов.
+ * Версия 2.0 - улучшенный UX с toast-уведомлениями
  */
 document.addEventListener('DOMContentLoaded', function() {
     // Инициализация редактируемых ячеек
@@ -55,11 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (toggleSoldBtn && hideSoldState) {
         const hideSoldValue = hideSoldState.value;
 
-        if (hideSoldValue === 'true') {
-            toggleSoldBtn.innerHTML = '<i class="bi bi-eye"></i> Показать проданные';
-            toggleSoldBtn.classList.remove('btn-secondary');
-            toggleSoldBtn.classList.add('btn-success');
-        }
+        updateToggleButton(toggleSoldBtn, hideSoldValue === 'true');
 
         toggleSoldBtn.addEventListener('click', function() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -68,15 +65,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             urlParams.set('hide_sold', newHideSold);
 
-            if (newHideSold === 'true') {
-                toggleSoldBtn.innerHTML = '<i class="bi bi-eye"></i> Показать проданные';
-                toggleSoldBtn.classList.remove('btn-secondary');
-                toggleSoldBtn.classList.add('btn-success');
-            } else {
-                toggleSoldBtn.innerHTML = '<i class="bi bi-eye-slash"></i> Скрыть проданные';
-                toggleSoldBtn.classList.remove('btn-success');
-                toggleSoldBtn.classList.add('btn-secondary');
-            }
+            updateToggleButton(toggleSoldBtn, newHideSold === 'true');
 
             window.location.href = '?' + urlParams.toString();
         });
@@ -107,7 +96,73 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Добавление предмета
     initAddItemSubmit();
+
+    // Обновление кнопки фильтра при загрузке
+    updateFilterButtonLabels();
 });
+
+/**
+ * Обновление кнопки скрытия проданных
+ */
+function updateToggleButton(btn, isHidden) {
+    if (isHidden) {
+        btn.innerHTML = '<i class="bi bi-eye"></i> <span class="d-none d-sm-inline">Показать проданные</span>';
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-success');
+    } else {
+        btn.innerHTML = '<i class="bi bi-eye-slash"></i> <span class="d-none d-sm-inline">Скрыть проданные</span>';
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-secondary');
+    }
+}
+
+/**
+ * Обновление меток кнопок фильтра
+ */
+function updateFilterButtonLabels() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const dateFrom = urlParams.get('date_from');
+    const dateTo = urlParams.get('date_to');
+    
+    if (dateFrom && dateTo) {
+        const from = new Date(dateFrom);
+        const to = new Date(dateTo);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        
+        // Проверка на "сегодня"
+        if (from.getTime() === today.getTime() && to.getTime() === today.getTime()) {
+            highlightActiveFilterButton('todayBtn');
+        }
+        // Проверка на "неделя"
+        else if (from.getTime() === weekAgo.getTime() && to.getTime() === today.getTime()) {
+            highlightActiveFilterButton('weekBtn');
+        }
+        // Проверка на "всё"
+        else if (from.getFullYear() <= 2020 && to.getFullYear() >= 2099) {
+            highlightActiveFilterButton('showAllBtn');
+        }
+    }
+}
+
+/**
+ * Подсветка активной кнопки фильтра
+ */
+function highlightActiveFilterButton(activeId) {
+    ['todayBtn', 'weekBtn', 'showAllBtn'].forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+            if (id === activeId) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        }
+    });
+}
 
 /**
  * Настройка кнопок фильтра по дате
@@ -118,7 +173,6 @@ function setupDateFilterButtons(hideSoldState) {
         showAllBtn.addEventListener('click', function() {
             const hideSold = hideSoldState?.value || 'false';
             const nameFilter = document.getElementById('filterNameInput')?.value || '';
-            // Показываем все предметы с 2020 года до 2099 года
             let url = '?date_from=2020-01-01&date_to=2099-12-31&hide_sold=' + hideSold;
             if (nameFilter) {
                 url += '&name=' + encodeURIComponent(nameFilter);
@@ -147,10 +201,10 @@ function setupDateFilterButtons(hideSoldState) {
             const today = new Date();
             const lastWeek = new Date(today);
             lastWeek.setDate(today.getDate() - 7);
-            
+
             const dateFrom = lastWeek.toISOString().split('T')[0];
             const dateTo = today.toISOString().split('T')[0];
-            
+
             const hideSold = hideSoldState?.value || 'false';
             const nameFilter = document.getElementById('filterNameInput')?.value || '';
             let url = '?date_from=' + dateFrom + '&date_to=' + dateTo + '&hide_sold=' + hideSold;
@@ -194,10 +248,16 @@ function initDeleteItem() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        location.reload();
+                        showToast('Предмет успешно удалён', 'success');
+                        setTimeout(() => location.reload(), 500);
+                    } else {
+                        showToast('Ошибка при удалении предмета', 'error');
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Ошибка при удалении предмета', 'error');
+                });
             }
         });
     }
@@ -227,6 +287,19 @@ function initAddItemForm() {
             purchaseDateInput.value = today;
         }
     });
+    
+    // Закрытие модального окна и очистка при скрытии
+    addItemModal.addEventListener('hidden.bs.modal', function() {
+        const addItemForm = document.getElementById('addItemForm');
+        if (addItemForm) {
+            addItemForm.reset();
+            const today = new Date().toISOString().split('T')[0];
+            const purchaseDateInput = document.getElementById('addItemPurchaseDate');
+            if (purchaseDateInput) {
+                purchaseDateInput.value = today;
+            }
+        }
+    });
 }
 
 /**
@@ -250,6 +323,13 @@ function initAddItemSubmit() {
             formData.set('sale_price', parsePrice(salePriceInput.value));
         }
 
+        // Блокировка кнопки отправки
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Добавление...';
+        }
+
         fetch("/items/add/", {
             method: 'POST',
             headers: {
@@ -263,18 +343,28 @@ function initAddItemSubmit() {
             if (data.success) {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addItemModal'));
                 if (modal) modal.hide();
-                this.reset();
-
-                const dateInput = this.querySelector('[name="purchase_date"]');
-                if (dateInput) {
-                    dateInput.value = new Date().toISOString().split('T')[0];
-                }
+                
+                showToast('Предмет успешно добавлен', 'success');
+                
                 // Перезагружаем страницу с сохранением текущих параметров фильтра
-                const urlParams = new URLSearchParams(window.location.search);
-                window.location.href = '?' + urlParams.toString();
+                setTimeout(() => {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    window.location.href = '?' + urlParams.toString();
+                }, 500);
+            } else {
+                showToast('Ошибка при добавлении предмета: ' + (data.error || 'Неизвестная ошибка'), 'error');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Ошибка при добавлении предмета', 'error');
+        })
+        .finally(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Добавить';
+            }
+        });
     });
 }
 

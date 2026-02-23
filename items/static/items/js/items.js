@@ -1,5 +1,6 @@
 /**
  * Логика редактирования предметов в таблице.
+ * Версия 2.0 - улучшенный UX
  */
 
 // Переменные для контекстного меню
@@ -68,6 +69,7 @@ function copyItemName(cell) {
     navigator.clipboard.writeText(itemName).then(function() {
         // Визуальная обратная связь
         cell.classList.add('copied');
+        showToast(`"${itemName}" скопировано в буфер`, 'success', 2000);
         setTimeout(function() {
             cell.classList.remove('copied');
         }, 800);
@@ -82,11 +84,13 @@ function copyItemName(cell) {
         try {
             document.execCommand('copy');
             cell.classList.add('copied');
+            showToast(`"${itemName}" скопировано в буфер`, 'success', 2000);
             setTimeout(function() {
                 cell.classList.remove('copied');
             }, 800);
         } catch (err) {
             console.error('Не удалось скопировать текст', err);
+            showToast('Не удалось скопировать текст', 'error');
         }
         document.body.removeChild(textArea);
     });
@@ -184,7 +188,8 @@ function saveCellValue(cell) {
     }
 
     // Если значение не изменилось - закрываем режим редактирования
-    if (newValue === displayValue.textContent || newValue === parsePrice(displayValue.textContent)) {
+    const currentValue = parsePrice(displayValue.textContent);
+    if (newValue === currentValue || newValue === displayValue.textContent) {
         editInput.style.display = 'none';
         displayValue.style.display = 'inline';
         return;
@@ -198,11 +203,7 @@ function saveCellValue(cell) {
 
         if (saleDateDisplay && (!saleDateDisplay.textContent || saleDateDisplay.textContent.trim() === '')) {
             const today = new Date().toISOString().split('T')[0];
-            const formatted = new Date().toLocaleDateString('ru-RU', {
-                day: '2-digit',
-                month: '2-digit',
-                year: '2-digit'
-            });
+            const formatted = formatDate(new Date());
 
             fetch(`/items/${itemId}/update/`, {
                 method: 'POST',
@@ -231,9 +232,13 @@ function saveCellValue(cell) {
             .then(data => {
                 if (data && data.success) {
                     updateCellDisplay(cell, row, field, data, newValue);
+                    showToast('Цена продажи обновлена', 'success', 1500);
                 }
             })
-            .catch(error => console.error('Error:', error))
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Ошибка при сохранении', 'error');
+            })
             .finally(() => {
                 editInput.style.display = 'none';
                 displayValue.style.display = 'inline';
@@ -256,9 +261,15 @@ function saveCellValue(cell) {
     .then(data => {
         if (data.success) {
             updateCellDisplay(cell, row, field, data, newValue);
+            showToast('Изменения сохранены', 'success', 1500);
+        } else {
+            showToast('Ошибка при сохранении: ' + (data.error || ''), 'error');
         }
     })
-    .catch(error => console.error('Error:', error))
+    .catch(error => {
+        console.error('Error:', error);
+        showToast('Ошибка при сохранении', 'error');
+    })
     .finally(() => {
         editInput.style.display = 'none';
         displayValue.style.display = 'inline';
@@ -287,18 +298,13 @@ function updateCellDisplay(cell, row, field, data, newValue) {
         updateProfitCell(row, field, numValue, data, newValue);
     } else if (field === 'purchase_date' || field === 'sale_date') {
         if (data.value) {
-            const date = new Date(data.value);
-            const formatted = date.toLocaleDateString('ru-RU', {
-                day: '2-digit',
-                month: '2-digit',
-                year: '2-digit'
-            });
+            const formatted = formatDate(data.value);
             displayValue.textContent = formatted;
             if (editInput) {
                 editInput.value = data.value;
             }
         } else {
-            displayValue.textContent = '';
+            displayValue.textContent = '—';
             if (editInput) {
                 editInput.value = '';
             }
@@ -326,11 +332,13 @@ function updateProfitCell(row, field, numValue, data, newValue) {
     if (data.profit !== undefined && data.profit !== '' && data.profit !== null) {
         const profitValue = parseFloat(data.profit);
         profitCell.textContent = profitValue.toLocaleString('ru-RU') + ' ₽';
-        profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit');
-        if (data.is_negative) {
+        profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit', 'zero-profit');
+        if (data.is_negative || profitValue < 0) {
             profitCell.classList.add('negative-profit');
-        } else if (data.profit > 0) {
+        } else if (profitValue > 0) {
             profitCell.classList.add('positive-profit');
+        } else if (profitValue === 0) {
+            profitCell.classList.add('zero-profit');
         }
         return;
     }
@@ -352,17 +360,19 @@ function updateProfitCell(row, field, numValue, data, newValue) {
         if (salePrice === null || salePriceText === '') {
             // Товар не продан
             profitCell.textContent = '-' + formatPrice(numValue);
-            profitCell.classList.remove('negative-profit', 'positive-profit');
+            profitCell.classList.remove('negative-profit', 'positive-profit', 'zero-profit');
             profitCell.classList.add('no-sale-profit');
         } else {
             // Товар продан
             const profit = salePrice - numValue;
             profitCell.textContent = profit.toLocaleString('ru-RU') + ' ₽';
-            profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit');
+            profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit', 'zero-profit');
             if (profit < 0) {
                 profitCell.classList.add('negative-profit');
             } else if (profit > 0) {
                 profitCell.classList.add('positive-profit');
+            } else {
+                profitCell.classList.add('zero-profit');
             }
         }
     }
@@ -502,6 +512,10 @@ function openAddPriceModal(cell) {
             return;
         }
 
+        // Блокировка кнопки
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Сохранение...';
+
         fetch(`/items/${itemId}/update/`, {
             method: 'POST',
             headers: {
@@ -514,11 +528,19 @@ function openAddPriceModal(cell) {
         .then(data => {
             if (data.success) {
                 updateCellDisplay(cell, row, 'purchase_price', data, newPrice.toString());
+                showToast('Цена покупки обновлена', 'success');
+                bsModal.hide();
+            } else {
+                showToast('Ошибка при обновлении: ' + (data.error || ''), 'error');
             }
         })
-        .catch(error => console.error('Error:', error))
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Ошибка при обновлении', 'error');
+        })
         .finally(() => {
-            bsModal.hide();
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Добавить';
         });
     };
 

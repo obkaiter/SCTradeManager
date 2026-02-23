@@ -1,5 +1,6 @@
 /**
  * Логика управления расходами.
+ * Версия 2.0 - улучшенный UX с toast-уведомлениями
  */
 
 /**
@@ -15,7 +16,7 @@ function loadExpenses() {
             tbody.innerHTML = '';
 
             if (!data.expenses || data.expenses.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="text-center" style="color: var(--text-muted);">Нет расходов</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted"><i class="bi bi-inbox display-6 d-block mb-2"></i>Нет расходов</td></tr>';
                 return;
             }
 
@@ -25,25 +26,26 @@ function loadExpenses() {
             data.expenses.forEach(exp => {
                 const tr = document.createElement('tr');
 
-                const date = new Date(exp.date).toLocaleDateString('ru-RU', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: '2-digit'
-                });
+                const date = formatDate(exp.date);
 
                 tr.innerHTML = `
                     <td>${date}</td>
                     <td>${formatPrice(exp.amount)}</td>
                     <td>
-                        <button class="btn btn-sm btn-primary edit-expense-btn"
-                            data-id="${exp.id}"
-                            data-date="${exp.date}"
-                            data-amount="${exp.amount}">
-                            ✎
-                        </button>
-                        <button class="btn btn-sm btn-danger delete-expense-btn" data-id="${exp.id}">
-                            &times;
-                        </button>
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-primary edit-expense-btn"
+                                data-id="${exp.id}"
+                                data-date="${exp.date}"
+                                data-amount="${exp.amount}"
+                                title="Редактировать">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger delete-expense-btn" 
+                                data-id="${exp.id}"
+                                title="Удалить">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
 
@@ -53,7 +55,10 @@ function loadExpenses() {
             tbody.appendChild(fragment);
             initExpenseButtons();
         })
-        .catch(error => console.error('Error loading expenses:', error));
+        .catch(error => {
+            console.error('Error loading expenses:', error);
+            showToast('Ошибка при загрузке расходов', 'error');
+        });
 }
 
 /**
@@ -83,8 +88,9 @@ function initExpenseButtons() {
     // Удаление
     document.querySelectorAll('.delete-expense-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            if (confirm('Удалить эту запись о расходах?')) {
-                const id = this.dataset.id;
+            const id = this.dataset.id;
+            
+            if (confirm('Вы уверены, что хотите удалить эту запись о расходах?')) {
                 fetch(`/items/expenses/${id}/delete/`, {
                     method: 'POST',
                     headers: {
@@ -95,11 +101,17 @@ function initExpenseButtons() {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        showToast('Расход успешно удалён', 'success');
                         loadExpenses();
-                        location.reload();
+                        setTimeout(() => location.reload(), 500);
+                    } else {
+                        showToast('Ошибка при удалении расхода', 'error');
                     }
                 })
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Ошибка при удалении расхода', 'error');
+                });
             }
         });
     });
@@ -120,6 +132,12 @@ function initAddExpenseForm() {
     const addForm = document.getElementById('addExpenseForm');
     if (!addForm) return;
 
+    // Установка текущей даты по умолчанию
+    const dateInput = addForm.querySelector('input[name="date"]');
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+
     addForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
@@ -127,6 +145,13 @@ function initAddExpenseForm() {
         const amountInput = document.getElementById('addExpenseAmount');
         if (amountInput) {
             formData.set('amount', parsePrice(amountInput.value));
+        }
+
+        // Блокировка кнопки отправки
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
         }
 
         fetch("/items/expenses/create/", {
@@ -140,12 +165,29 @@ function initAddExpenseForm() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                showToast('Расход успешно добавлен', 'success');
                 this.reset();
+                // Возвращаем дату по умолчанию
+                const dateInput = this.querySelector('input[name="date"]');
+                if (dateInput) {
+                    dateInput.value = new Date().toISOString().split('T')[0];
+                }
                 loadExpenses();
-                location.reload();
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast('Ошибка при добавлении расхода: ' + (data.error || ''), 'error');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Ошибка при добавлении расхода', 'error');
+        })
+        .finally(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-lg"></i>';
+            }
+        });
     });
 }
 
@@ -166,7 +208,17 @@ function initEditExpenseForm() {
         }
 
         const expenseId = document.getElementById('editExpenseId')?.value;
-        if (!expenseId) return;
+        if (!expenseId) {
+            showToast('Ошибка: не указан ID расхода', 'error');
+            return;
+        }
+
+        // Блокировка кнопки отправки
+        const submitBtn = this.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Сохранение...';
+        }
 
         fetch(`/items/expenses/${expenseId}/update/`, {
             method: 'POST',
@@ -179,12 +231,24 @@ function initEditExpenseForm() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                showToast('Расход успешно обновлён', 'success');
                 const editModal = bootstrap.Modal.getInstance(document.getElementById('editExpenseModal'));
                 if (editModal) editModal.hide();
                 loadExpenses();
-                location.reload();
+                setTimeout(() => location.reload(), 500);
+            } else {
+                showToast('Ошибка при обновлении расхода: ' + (data.error || ''), 'error');
             }
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Ошибка при обновлении расхода', 'error');
+        })
+        .finally(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Сохранить';
+            }
+        });
     });
 }

@@ -4,57 +4,114 @@
 {% block title %}Аналитика прибыли{% endblock %}
 
 {% block content %}
-<div class="mb-4 d-flex justify-content-between align-items-center">
-    <h2>Аналитика прибыли по дням</h2>
-    <a href="{% url 'items:item_list' %}" class="btn btn-secondary">
-        <i class="bi bi-arrow-left"></i> На главную
-    </a>
+<!-- Заголовок и навигация -->
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="mb-0">
+            <i class="bi bi-bar-chart-line me-2"></i>
+            Аналитика прибыли
+        </h2>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'items:item_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            На главную
+        </a>
+    </div>
 </div>
 
 <!-- Фильтр по датам -->
-<div class="card mb-3">
-    <div class="card-body py-2">
-        <form method="get" class="row g-2 align-items-end">
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="bi bi-funnel me-2"></i>
+        Фильтр по датам
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end" id="analyticsFilterForm">
+            <!-- Быстрые фильтры -->
+            <div class="col-12 mb-2">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="todayBtn">
+                        <i class="bi bi-calendar-day me-1"></i>
+                        Сегодня
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="weekBtn">
+                        <i class="bi bi-calendar-week me-1"></i>
+                        Неделя
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="showAllBtn">
+                        <i class="bi bi-list-ul me-1"></i>
+                        Всё
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Поля дат и кнопка -->
             <div class="col-md-4">
-                <label class="form-label mb-1">Дата с:</label>
-                <input type="date" name="date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}" required>
+                <label class="form-label" for="dateFrom">
+                    <i class="bi bi-calendar-check me-1"></i>
+                    Дата с
+                </label>
+                <input type="date" name="date_from" id="dateFrom" class="form-control" value="{{ date_from|date:'Y-m-d' }}" required>
             </div>
             <div class="col-md-4">
-                <label class="form-label mb-1">Дата по:</label>
-                <input type="date" name="date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}" required>
+                <label class="form-label" for="dateTo">
+                    <i class="bi bi-calendar-check me-1"></i>
+                    Дата по
+                </label>
+                <input type="date" name="date_to" id="dateTo" class="form-control" value="{{ date_to|date:'Y-m-d' }}" required>
             </div>
             <div class="col-md-4">
-                <button type="submit" class="btn btn-primary w-100">Применить</button>
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-check-lg me-1"></i>
+                    Применить фильтр
+                </button>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Общая прибыль -->
-<div class="card mb-3">
-    <div class="card-body py-2">
-        <h5 class="card-title mb-1">Общая прибыль за период: {{ date_from|date:"d.m.y" }} - {{ date_to|date:"d.m.y" }}</h5>
-        <p class="fs-3 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% else %}text-secondary{% endif %} mb-0">
-            {{ total_profit|format_price }}
-        </p>
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8 d-flex align-items-center">
+                <div>
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-trophy me-2"></i>
+                        Общая прибыль за период
+                    </h5>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <p class="fs-2 mb-0 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% else %}text-secondary{% endif %}">
+                    <strong>{{ total_profit|format_price }}</strong>
+                </p>
+            </div>
+        </div>
     </div>
 </div>
 
 <!-- Диаграмма -->
 <div class="card">
-    <div class="card-body py-2">
-        <h5 class="card-title mb-3 mt-2">Прибыль по дням</h5>
-        <div style="height: 500px;">
+    <div class="card-header">
+        <i class="bi bi-bar-chart-fill me-2"></i>
+        Прибыль по дням
+    </div>
+    <div class="card-body">
+        {% if labels|length == 0 %}
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            Нет данных о продажах за выбранный период. Выберите другой диапазон дат.
+        </div>
+        {% else %}
+        <div id="chartContainer" style="height: 500px; min-height: 300px;">
             <canvas id="profitChart"></canvas>
         </div>
+        {% endif %}
     </div>
 </div>
-
-{% if labels|length == 0 %}
-<div class="alert alert-info mt-3">
-    Нет данных о продажах за выбранный период.
-</div>
-{% endif %}
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
@@ -64,80 +121,170 @@ function formatPrice(value) {
     return num.toLocaleString('ru-RU') + ' ₽';
 }
 
+// Отправка формы фильтра
+function submitFilterForm() {
+    const form = document.getElementById('analyticsFilterForm');
+    if (form) {
+        form.submit();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    const ctx = document.getElementById('profitChart').getContext('2d');
-    
-    const labels = {{ labels|safe }};
-    const data = {{ data|safe }};
-    
-    // Генерируем цвета для столбцов (зелёный для прибыли, красный для убытка)
-    const backgroundColors = data.map(value => value >= 0 ? 'rgba(39, 174, 96, 0.8)' : 'rgba(218, 68, 83, 0.8)');
-    const borderColors = data.map(value => value >= 0 ? 'rgb(39, 174, 96)' : 'rgb(218, 68, 83)');
-    
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'Прибыль',
-                data: data,
-                backgroundColor: backgroundColors,
-                borderColor: borderColors,
-                borderWidth: 1
-            }]
-        },
-        options: {
-            indexAxis: 'y',
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    display: false
+    // Кнопка "Сегодня"
+    const todayBtn = document.getElementById('todayBtn');
+    if (todayBtn) {
+        todayBtn.addEventListener('click', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFrom').value = today;
+            document.getElementById('dateTo').value = today;
+            submitFilterForm();
+        });
+    }
+
+    // Кнопка "Неделя"
+    const weekBtn = document.getElementById('weekBtn');
+    if (weekBtn) {
+        weekBtn.addEventListener('click', function() {
+            const today = new Date();
+            const lastWeek = new Date(today);
+            lastWeek.setDate(today.getDate() - 7);
+            
+            const dateFrom = lastWeek.toISOString().split('T')[0];
+            const dateTo = today.toISOString().split('T')[0];
+            
+            document.getElementById('dateFrom').value = dateFrom;
+            document.getElementById('dateTo').value = dateTo;
+            submitFilterForm();
+        });
+    }
+
+    // Кнопка "Всё"
+    const showAllBtn = document.getElementById('showAllBtn');
+    if (showAllBtn) {
+        showAllBtn.addEventListener('click', function() {
+            document.getElementById('dateFrom').value = '2020-01-01';
+            document.getElementById('dateTo').value = '2099-12-31';
+            submitFilterForm();
+        });
+    }
+
+    // Инициализация диаграммы
+    const ctx = document.getElementById('profitChart');
+    if (ctx) {
+        const context = ctx.getContext('2d');
+        const chartContainer = document.getElementById('chartContainer');
+
+        const labels = {{ labels|safe }};
+        const data = {{ data|safe }};
+
+        // Динамическая высота контейнера: 35px на элемент, но не меньше 300px и не больше 2000px
+        const barHeight = 35;
+        const minHeight = 300;
+        const maxHeight = 2000;
+        const calculatedHeight = Math.max(minHeight, Math.min(maxHeight, labels.length * barHeight));
+        
+        if (chartContainer) {
+            chartContainer.style.height = calculatedHeight + 'px';
+        }
+
+        // Генерируем цвета для столбцов (зелёный для прибыли, красный для убытка)
+        const backgroundColors = data.map(value => value >= 0 ? 'rgba(40, 167, 69, 0.8)' : 'rgba(220, 53, 69, 0.8)');
+        const borderColors = data.map(value => value >= 0 ? 'rgb(40, 167, 69)' : 'rgb(220, 53, 69)');
+
+        new Chart(context, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Прибыль',
+                    data: data,
+                    backgroundColor: backgroundColors,
+                    borderColor: borderColors,
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barThickness: 14,
+                    minBarLength: 10,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Прибыль: ' + formatPrice(context.parsed.x);
+                            }
+                        },
+                        backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                        titleColor: '#f0f0f0',
+                        bodyColor: '#f0f0f0',
+                        borderColor: '#3e3e42',
+                        borderWidth: 1,
+                        padding: 12,
+                        displayColors: true,
+                        cornerRadius: 6
+                    }
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            return 'Прибыль: ' + formatPrice(context.parsed.x);
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Прибыль (₽)',
+                            color: '#f0f0f0',
+                            font: {
+                                size: 14,
+                                weight: '600'
+                            }
+                        },
+                        ticks: {
+                            color: '#b0b0b0',
+                            font: {
+                                size: 13
+                            },
+                            callback: function(value) {
+                                return value.toLocaleString('ru-RU') + ' ₽';
+                            }
+                        },
+                        grid: {
+                            color: '#3e3e42',
+                            lineWidth: 1
                         }
                     },
-                    backgroundColor: 'rgba(35, 38, 41, 0.95)',
-                    titleColor: '#eff0f1',
-                    bodyColor: '#eff0f1',
-                    borderColor: '#31363b',
-                    borderWidth: 1
-                }
-            },
-            scales: {
-                x: {
-                    beginAtZero: true,
-                    title: {
-                        display: true,
-                        text: 'Прибыль',
-                        color: '#eff0f1'
-                    },
-                    ticks: {
-                        color: '#b0b0b0'
-                    },
-                    grid: {
-                        color: '#31363b'
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Дата',
+                            color: '#f0f0f0',
+                            font: {
+                                size: 14,
+                                weight: '600'
+                            }
+                        },
+                        ticks: {
+                            color: '#b0b0b0',
+                            font: {
+                                size: 13
+                            }
+                        },
+                        grid: {
+                            color: '#3e3e42',
+                            lineWidth: 1
+                        }
                     }
                 },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Дата',
-                        color: '#eff0f1'
-                    },
-                    ticks: {
-                        color: '#b0b0b0'
-                    },
-                    grid: {
-                        color: '#31363b'
-                    }
+                animation: {
+                    duration: 500,
+                    easing: 'easeOutQuart'
                 }
             }
-        }
-    });
+        });
+    }
 });
 </script>
 {% endblock %}

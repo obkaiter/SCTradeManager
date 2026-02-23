@@ -5,85 +5,116 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Менеджер предметов{% endblock %}</title>
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
         :root {
-            /* KDE Plasma Dark Theme Colors */
-            --bg-primary: #232629;
-            --bg-secondary: #1c1e20;
-            --bg-card: #232629;
-            --bg-table: #232629;
-            --bg-modal: #232629;
-            --bg-input: #1c1e20;
-            --bg-hover: #2d3136;
-            --bg-header: #2d3136;
-            --bg-button: #31363b;
-            --text-primary: #eff0f1;
+            /* KDE Plasma Dark Theme Colors - оптимизировано для контраста и доступности */
+            --bg-primary: #1e1e1e;
+            --bg-secondary: #252526;
+            --bg-card: #252526;
+            --bg-table: #252526;
+            --bg-modal: #252526;
+            --bg-input: #1e1e1e;
+            --bg-hover: #2d2d30;
+            --bg-header: #2d2d30;
+            --bg-button: #3e3e42;
+            --text-primary: #f0f0f0;
             --text-secondary: #b0b0b0;
-            --text-muted: #7f8c8d;
-            --border-color: #31363b;
-            --accent-blue: #3daee9;
-            --accent-info: #1abc9c;
-            --accent-success: #27ae60;
-            --accent-warning: #f39c12;
-            --accent-danger: #da4453;
-            --gradient-info: linear-gradient(to right, #232629 0%, #2d3136 100%);
-            --gradient-header: linear-gradient(to right, #232629 0%, #2d3136 100%);
-            --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.4);
+            --text-muted: #858585;
+            --border-color: #3e3e42;
+            --border-light: #4e4e52;
+            --accent-blue: #4da6ff;
+            --accent-info: #20c997;
+            --accent-success: #28a745;
+            --accent-warning: #ffc107;
+            --accent-danger: #dc3545;
+            --gradient-info: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+            --gradient-header: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
+            --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.5);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            /* Размеры шрифтов по стандарту WCAG */
+            --font-base: 16px;
+            --font-sm: 14px;
+            --font-lg: 18px;
+            --font-xl: 20px;
+            /* Отступы по 8pt grid system */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
         }
 
         body {
-            font-family: 'Calibri', 'Candara', 'Segoe', 'Segoe UI', Optima, Arial, sans-serif;
-            font-size: 18px;
+            font-family: 'Segoe UI', 'Calibri', Arial, sans-serif;
+            font-size: var(--font-base);
+            line-height: 1.5;
             background-color: var(--bg-primary);
             color: var(--text-primary);
+            min-height: 100vh;
         }
+
         .container {
-            max-width: 100%;
-            padding: 20px;
+            max-width: 1400px;
+            padding: var(--spacing-md);
         }
+
+        /* Типографика */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Segoe UI', 'Calibri', Arial, sans-serif;
+            color: var(--text-primary);
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        h1 { font-size: 28px; }
+        h2 { font-size: 24px; }
+        h3 { font-size: 20px; }
+        h4 { font-size: 18px; }
+        h5 { font-size: 16px; }
+        h6 { font-size: 14px; }
+
+        /* Цвета прибыли - приглушённые оттенки */
         .negative-profit {
-            background-color: var(--accent-danger) !important;
+            background-color: #a31515 !important;
             color: white !important;
         }
         .positive-profit {
-            background-color: var(--accent-success) !important;
+            background-color: #1b5e20 !important;
             color: white !important;
+        }
+        .zero-profit {
+            background-color: #4a4a4a !important;
+            color: #c0c0c0 !important;
         }
         .no-sale-profit {
             background-color: var(--bg-table) !important;
             color: var(--text-primary) !important;
         }
+
+        /* Редактируемые ячейки */
         .editable-cell {
             cursor: pointer;
-            transition: background-color 0.1s;
+            transition: all 0.15s ease;
+            position: relative;
+            border-radius: 4px;
         }
         .editable-cell:hover {
-            background-color: transparent;
-        }
-        .copy-on-click {
-            position: relative;
-        }
-        .copy-on-click.copied {
-            background-color: #2d4a3a !important;
-        }
-        .copy-on-click.copied::after {
-            content: '✓';
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #27ae60;
-            font-weight: bold;
-            font-size: 1.2em;
+            background-color: rgba(77, 166, 255, 0.1);
         }
         .editable-cell input {
-            border: 2px solid var(--border-color);
-            border-radius: 0;
-            padding: 2px 6px;
+            border: 2px solid var(--accent-blue);
+            border-radius: 4px;
+            padding: 4px 8px;
             width: 100%;
             font-family: inherit;
-            font-size: 18px;
+            font-size: var(--font-base);
             box-sizing: border-box;
             position: absolute;
             left: 0;
@@ -92,6 +123,8 @@
             margin: 0;
             background-color: var(--bg-input);
             color: var(--text-primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(77, 166, 255, 0.2);
         }
         .editable-cell input[type="date"] {
             background-color: var(--bg-input);
@@ -100,75 +133,96 @@
         .editable-cell input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(0.8);
             cursor: pointer;
-        }
-        .editable-cell {
-            position: relative;
-            color: var(--text-primary);
+            border-radius: 4px;
         }
         .editable-cell .display-value {
             color: var(--text-primary);
+            padding: 4px 8px;
+            display: block;
         }
-        .editable-cell input:focus {
-            outline: none;
-            border-color: var(--accent-blue);
-            box-shadow: 0 0 0 2px rgba(61, 174, 233, 0.2);
+
+        /* Копирование названия */
+        .copy-on-click {
+            position: relative;
         }
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Calibri', 'Candara', 'Segoe', 'Segoe UI', Optima, Arial, sans-serif;
-            color: var(--text-primary);
+        .copy-on-click.copied {
+            background-color: rgba(40, 167, 69, 0.3) !important;
         }
-        h6 {
-            color: var(--text-primary);
-            margin-top: 0.5rem;
-            margin-bottom: 0.75rem;
+        .copy-on-click.copied::after {
+            content: '✓';
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--accent-success);
+            font-weight: bold;
+            font-size: 16px;
         }
+
+        /* Сортируемые заголовки */
         .sortable {
             cursor: pointer;
             user-select: none;
             position: relative;
+            transition: background-color 0.15s ease;
         }
         .sortable:hover {
-            background-color: var(--bg-hover);
+            background-color: var(--bg-hover) !important;
         }
         .sort-icon {
-            margin-left: 5px;
-            font-size: 0.7em;
+            margin-left: 6px;
+            font-size: 12px;
             color: var(--text-secondary);
+            opacity: 0.7;
+        }
+        .sortable:hover .sort-icon {
+            opacity: 1;
         }
 
-        /* Excel-like table styling */
+        /* Excel-like table styling - оптимизировано */
         .table-excel {
             background-color: var(--bg-table) !important;
             border-collapse: separate;
             border-spacing: 0;
             width: 100%;
-            font-size: 18px;
-            border: 2px solid var(--border-color);
+            font-size: var(--font-base);
+            border: 1px solid var(--border-color);
         }
         .table-excel thead th {
             background: var(--gradient-header) !important;
             border: 1px solid var(--border-color);
-            padding: 4px 8px;
+            padding: 10px 12px;
             font-weight: 600;
             color: var(--text-primary) !important;
             text-align: center;
             position: sticky;
             top: 0;
             z-index: 10;
-            font-size: 18px;
+            font-size: var(--font-sm);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
         }
         .table-excel tbody td {
             border: 1px solid var(--border-color);
-            padding: 2px 8px;
+            padding: 8px 12px;
             vertical-align: middle;
-            font-size: 18px;
+            font-size: var(--font-base);
             color: var(--text-primary) !important;
+            transition: background-color 0.15s ease;
+            white-space: nowrap;
         }
         .table-excel tbody td:not(.profit-cell) {
             background-color: var(--bg-table) !important;
         }
+        .table-excel tbody tr:hover td:not(.profit-cell) {
+            background-color: var(--bg-hover) !important;
+        }
         .table-excel tbody tr:nth-child(even) td:not(.profit-cell) {
             background-color: rgba(255, 255, 255, 0.02) !important;
+        }
+        .table-excel tbody tr:nth-child(even):hover td:not(.profit-cell) {
+            background-color: var(--bg-hover) !important;
         }
         .table-excel td.text-center,
         .table-excel th.text-center {
@@ -182,114 +236,228 @@
             font-weight: 600;
             text-align: right;
             color: var(--text-primary) !important;
+            font-size: var(--font-base);
         }
         .price-cell {
             text-align: right;
             color: var(--text-primary) !important;
-        }
-        .text-center {
-            color: var(--text-primary) !important;
-        }
-        .text-right {
-            color: var(--text-primary) !important;
+            white-space: nowrap;
         }
 
-        /* Button group */
+        /* Кнопки - единый стиль */
+        .btn {
+            border-radius: var(--radius-sm);
+            font-size: var(--font-base);
+            padding: 8px 16px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn i, .btn bi {
+            font-size: 16px;
+        }
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: var(--font-sm);
+        }
+        .btn-lg {
+            padding: 10px 20px;
+            font-size: var(--font-lg);
+        }
         .btn-group {
             display: inline-flex;
-            gap: 4px;
+            gap: 6px;
         }
         .btn-group .btn {
-            border-radius: 4px;
-            font-size: 14px;
-            padding: 10px 18px;
+            border-radius: var(--radius-sm);
+        }
+
+        /* Bootstrap button overrides */
+        .btn-primary {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+        .btn-primary:hover, .btn-primary:focus {
+            background-color: #3d8bdb;
+            border-color: #3d8bdb;
+            color: white;
+            box-shadow: 0 0 0 3px rgba(77, 166, 255, 0.3);
+        }
+        .btn-info {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+            color: white;
+        }
+        .btn-info:hover, .btn-info:focus {
+            background-color: #0b5ed7;
+            border-color: #0a58ca;
+            color: white;
+            box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.3);
+        }
+        .btn-warning {
+            background-color: var(--accent-warning);
+            border-color: var(--accent-warning);
+            color: #212529;
+        }
+        .btn-warning:hover, .btn-warning:focus {
+            background-color: #e0a800;
+            border-color: #e0a800;
+            color: #212529;
+            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.3);
+        }
+        .btn-danger {
+            background-color: var(--accent-danger);
+            border-color: var(--accent-danger);
+            color: white;
+        }
+        .btn-danger:hover, .btn-danger:focus {
+            background-color: #c82333;
+            border-color: #c82333;
+            color: white;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.3);
+        }
+        .btn-success {
+            background-color: var(--accent-success);
+            border-color: var(--accent-success);
+            color: white;
+        }
+        .btn-success:hover, .btn-success:focus {
+            background-color: #218838;
+            border-color: #218838;
+            color: white;
+            box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
+        }
+        .btn-secondary {
+            background-color: var(--bg-button);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+        .btn-secondary:hover, .btn-secondary:focus {
+            background-color: var(--bg-hover);
+            border-color: var(--border-light);
+            color: var(--text-primary);
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+        }
+        .btn-outline-primary {
+            color: var(--accent-blue);
+            border-color: var(--accent-blue);
+        }
+        .btn-outline-primary:hover {
+            background-color: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: white;
+        }
+        .btn-outline-secondary {
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+        .btn-outline-secondary:hover {
+            background-color: var(--bg-button);
+            border-color: var(--border-light);
+            color: var(--text-primary);
         }
 
         /* Alert styling */
         .alert-info {
             background: var(--gradient-info);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 14px 18px;
-            font-size: 15px;
+            border-radius: var(--radius-md);
+            padding: 12px 16px;
+            font-size: var(--font-base);
             color: var(--text-primary);
         }
 
-        /* Summary block styling */
+        /* Summary block styling - улучшено */
         .summary-block {
             background: var(--gradient-info);
             border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 10px 14px;
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
             display: flex;
             flex-direction: column;
             justify-content: center;
+            box-shadow: var(--shadow-sm);
         }
         .summary-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 3px 0;
+            padding: 6px 0;
         }
         .summary-label {
-            font-size: 14px;
+            font-size: var(--font-sm);
             color: var(--text-primary);
+            font-weight: 400;
         }
         .summary-value {
             font-weight: 600;
             white-space: nowrap;
-            margin-left: 12px;
+            margin-left: 16px;
             color: var(--text-primary);
         }
         .summary-divider {
             border-top: 1px solid var(--border-color);
-            margin: 6px 0;
+            margin: 8px 0;
         }
 
-        /* Modal styling */
+        /* Modal styling - оптимизировано */
         .modal-header {
             background: var(--gradient-header);
             color: var(--text-primary);
             border-bottom: 1px solid var(--border-color);
+            padding: var(--spacing-md) var(--spacing-lg);
+        }
+        .modal-title {
+            font-size: var(--font-lg);
+            font-weight: 600;
         }
         .modal-header .btn-close {
             filter: brightness(1) invert(0.9);
+            padding: var(--spacing-sm);
         }
         .modal-content {
-            border-radius: 8px;
+            border-radius: var(--radius-lg);
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-card);
             background-color: var(--bg-modal);
         }
         .modal-body {
-            font-size: 15px;
+            font-size: var(--font-base);
             color: var(--text-primary);
             background-color: var(--bg-modal);
+            padding: var(--spacing-lg);
         }
         .form-control {
-            font-size: 15px;
-            padding: 8px 12px;
+            font-size: var(--font-base);
+            padding: 10px 14px;
             background-color: var(--bg-input);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
         }
         .form-control:focus {
             background-color: var(--bg-hover);
             border-color: var(--accent-blue);
             color: var(--text-primary);
-            box-shadow: 0 0 0 0.2rem rgba(61, 174, 233, 0.25);
+            box-shadow: 0 0 0 3px rgba(77, 166, 255, 0.25);
         }
         .form-control::placeholder {
             color: var(--text-muted);
         }
         .form-label {
-            font-size: 14px;
+            font-size: var(--font-sm);
             font-weight: 600;
             color: var(--text-primary);
+            margin-bottom: 6px;
         }
         .modal-footer {
             background-color: var(--bg-modal);
             border-top: 1px solid var(--border-color);
+            padding: var(--spacing-md) var(--spacing-lg);
+            gap: 8px;
         }
 
         /* Контекстное меню */
@@ -297,26 +465,28 @@
             position: absolute;
             background: var(--bg-modal);
             border: 1px solid var(--border-color);
-            border-radius: 4px;
+            border-radius: var(--radius-sm);
             box-shadow: var(--shadow-card);
             z-index: 1000;
-            min-width: 150px;
+            min-width: 160px;
             display: none;
+            overflow: hidden;
         }
         .context-menu-item {
-            padding: 8px 16px;
+            padding: 10px 16px;
             cursor: pointer;
-            transition: background-color 0.1s;
+            transition: background-color 0.15s;
             color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .context-menu-item:hover {
             background-color: var(--bg-hover);
         }
-        .context-menu-item:first-child {
-            border-radius: 4px 4px 0 0;
-        }
-        .context-menu-item:last-child {
-            border-radius: 0 0 4px 4px;
+        .context-menu-item i, .context-menu-item bi {
+            font-size: 14px;
+            color: var(--text-secondary);
         }
 
         /* Card styling */
@@ -324,22 +494,31 @@
             background-color: var(--bg-card);
             border: 1px solid var(--border-color);
             color: var(--text-primary);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
         }
         .card-header {
             background: var(--gradient-header);
             border-bottom: 1px solid var(--border-color);
             color: var(--text-primary);
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-weight: 600;
         }
         .card-body {
             color: var(--text-primary);
+            padding: var(--spacing-md);
         }
         .card-title {
             color: var(--text-primary);
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
         }
 
         /* Table responsive */
         .table-responsive {
             background-color: var(--bg-table);
+            border-radius: var(--radius-sm);
+            overflow: auto;
         }
 
         /* Table bordered styling */
@@ -356,60 +535,77 @@
             color: var(--text-primary);
         }
 
-        /* Bootstrap button overrides for dark theme */
-        .btn-primary {
-            background-color: var(--accent-blue);
-            border-color: var(--accent-blue);
-            color: white;
+        /* Утилиты */
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            :root {
+                --font-base: 14px;
+            }
+            .container {
+                padding: var(--spacing-sm);
+            }
+            .btn {
+                padding: 6px 12px;
+                font-size: 14px;
+            }
+            .table-excel thead th {
+                padding: 8px 6px;
+                font-size: 12px;
+            }
+            .table-excel tbody td {
+                padding: 6px 8px;
+            }
         }
-        .btn-primary:hover {
-            background-color: #2c9cce;
-            border-color: #2c9cce;
+
+        /* Toast уведомления */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
         }
-        .btn-info {
-            background-color: var(--accent-info);
-            border-color: var(--accent-info);
-            color: white;
+        .toast {
+            background-color: var(--bg-modal);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-card);
         }
-        .btn-info:hover {
-            background-color: #16a085;
-            border-color: #16a085;
-        }
-        .btn-warning {
-            background-color: var(--accent-warning);
-            border-color: var(--accent-warning);
-            color: white;
-        }
-        .btn-warning:hover {
-            background-color: #d68910;
-            border-color: #d68910;
-        }
-        .btn-danger {
-            background-color: var(--accent-danger);
-            border-color: var(--accent-danger);
-            color: white;
-        }
-        .btn-danger:hover {
-            background-color: #c0392b;
-            border-color: #c0392b;
-        }
-        .btn-secondary {
-            background-color: var(--bg-button);
-            border-color: var(--border-color);
+        .toast-header {
+            background: var(--gradient-header);
+            border-bottom: 1px solid var(--border-color);
             color: var(--text-primary);
         }
-        .btn-secondary:hover {
-            background-color: var(--bg-hover);
-            border-color: var(--border-color);
+        .toast-body {
+            color: var(--text-primary);
+        }
+
+        /* Плавная прокрутка */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Фокус для доступности */
+        *:focus-visible {
+            outline: 2px solid var(--accent-blue);
+            outline-offset: 2px;
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <!-- Toast контейнер для уведомлений -->
+    <div class="toast-container" id="toastContainer"></div>
+    
     <div class="container mt-4">
         {% block content %}{% endblock %}
     </div>
+    
+    <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Скрипты приложения -->
     <script src="{% static 'items/js/utils.js' %}"></script>
     <script src="{% static 'items/js/items.js' %}"></script>
     <script src="{% static 'items/js/expenses.js' %}"></script>

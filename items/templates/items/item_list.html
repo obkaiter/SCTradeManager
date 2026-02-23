@@ -7,95 +7,125 @@
 <!-- Скрытое поле для хранения состояния hide_sold -->
 <input type="hidden" id="hideSoldState" value="{{ hide_sold|yesno:'true,false' }}">
 
-<!-- Верхний блок: кнопки справа сверху, итоги слева -->
-<div class="mb-3">
-    <!-- Кнопки справа -->
-    <div class="d-flex justify-content-end gap-2 mb-3">
-        <a href="{% url 'items:analytics' %}" class="btn btn-info" style="width: auto; white-space: nowrap; font-size: 19px;">
-            <i class="bi bi-bar-chart-line"></i> Аналитика
-        </a>
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal" style="width: auto; white-space: nowrap; font-size: 19px;">
-            <i class="bi bi-plus-lg"></i> Добавить предмет
-        </button>
-        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="width: auto; white-space: nowrap; font-size: 19px;">
-            <i class="bi bi-funnel"></i> Фильтр
-        </button>
-        <button type="button" class="btn btn-secondary" id="toggleSoldBtn" style="width: auto; white-space: nowrap; font-size: 19px;">
-            <i class="bi bi-eye-slash"></i> Скрыть проданные
-        </button>
-        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#expenseModal" id="openExpenseBtn" style="width: auto; white-space: nowrap; font-size: 19px;">
-            Накладные расходы
-        </button>
+<!-- Заголовок страницы -->
+<div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <h2 class="mb-0"><i class="bi bi-box-seam me-2"></i>Менеджер предметов</h2>
     </div>
-
-    <!-- Блок с итогами -->
-    <div class="summary-block">
-        <div class="summary-row">
-            <span class="summary-label">Суммарная прибыль за период: {{ date_from|date:"d.m.y" }} - {{ date_to|date:"d.m.y" }}</span>
-            <span class="summary-value fs-5 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% endif %}">
-                {{ total_profit|format_price }}
-            </span>
-        </div>
-        <div class="summary-row">
-            <span class="summary-label">Накладные расходы:</span>
-            <span class="summary-value fs-6 text-danger">
-                - {{ total_expenses|format_price }}
-            </span>
-        </div>
-        <div class="summary-row">
-            <span class="summary-label">Зарезервировано:</span>
-            <span class="summary-value fs-6 text-secondary">
-                {{ reserved_amount|format_price }}
-            </span>
-        </div>
-        <div class="summary-divider"></div>
-        <div class="summary-row">
-            <span class="summary-label"><strong>Чистая прибыль:</strong></span>
-            <span class="summary-value fs-5 {% if net_profit < 0 %}text-danger{% elif net_profit > 0 %}text-success{% endif %}">
-                {{ net_profit|format_price }}
-            </span>
+    <div class="col-md-6">
+        <!-- Кнопки действий -->
+        <div class="d-flex justify-content-end gap-2 flex-wrap">
+            <a href="{% url 'items:analytics' %}" class="btn btn-info">
+                <i class="bi bi-bar-chart-line"></i>
+                <span class="d-none d-sm-inline">Аналитика</span>
+            </a>
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#dateFilterModal">
+                <i class="bi bi-funnel"></i>
+                <span class="d-none d-sm-inline">Фильтр</span>
+            </button>
+            <button type="button" class="btn btn-secondary" id="toggleSoldBtn">
+                <i class="bi bi-eye-slash"></i>
+                <span class="d-none d-sm-inline">Скрыть проданные</span>
+            </button>
+            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#expenseModal" id="openExpenseBtn">
+                <i class="bi bi-receipt"></i>
+                <span class="d-none d-sm-inline">Расходы</span>
+            </button>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                <i class="bi bi-plus-lg"></i>
+                <span class="d-none d-sm-inline">Добавить</span>
+            </button>
         </div>
     </div>
 </div>
 
+<!-- Блок с итогами -->
+<div class="summary-block mb-4">
+    <div class="summary-row">
+        <span class="summary-label">
+            <i class="bi bi-calendar-range me-2"></i>
+            Прибыль за период: {{ date_from|date:"d.m.y" }} - {{ date_to|date:"d.m.y" }}
+        </span>
+        <span class="summary-value fs-6 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% endif %}">
+            {{ total_profit|format_price }}
+        </span>
+    </div>
+    <div class="summary-row">
+        <span class="summary-label">
+            <i class="bi bi-receipt-cutoff me-2"></i>
+            Накладные расходы:
+        </span>
+        <span class="summary-value fs-6 text-danger">
+            - {{ total_expenses|format_price }}
+        </span>
+    </div>
+    <div class="summary-row">
+        <span class="summary-label">
+            <i class="bi bi-piggy-bank me-2"></i>
+            Зарезервировано:
+        </span>
+        <span class="summary-value fs-6 text-secondary">
+            {{ reserved_amount|format_price }}
+        </span>
+    </div>
+    <div class="summary-divider"></div>
+    <div class="summary-row">
+        <span class="summary-label">
+            <i class="bi bi-graph-up-arrow me-2"></i>
+            <strong>Чистая прибыль:</strong>
+        </span>
+        <span class="summary-value fs-5 {% if net_profit < 0 %}text-danger{% elif net_profit > 0 %}text-success{% endif %}">
+            {{ net_profit|format_price }}
+        </span>
+    </div>
+</div>
+
 <!-- Таблица предметов -->
-<div class="table-responsive" style="background: white; border: 2px solid #a0a0a0; border-radius: 4px;">
+<div class="table-responsive mb-4">
     <table class="table table-excel mb-0" data-current-sort="{{ sort_by }}">
         <thead>
             <tr>
-                <th style="width: 50px;" class="text-center">№</th>
-                <th class="sortable" data-sort="name">
-                    Название предмета
-                    <span class="sort-icon">{% if sort_by == 'name' %}▲{% elif sort_by == '-name' %}▼{% else %}▾{% endif %}</span>
+                <th style="width: 50px;" class="text-center">#</th>
+                <th class="sortable" data-sort="name" style="width: 200px;">
+                    <i class="bi bi-tag me-1"></i>
+                    Название
+                    <span class="sort-icon">{% if sort_by == 'name' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-name' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable text-right" data-sort="purchase_price">
-                    Цена покупки
-                    <span class="sort-icon">{% if sort_by == 'purchase_price' %}▲{% elif sort_by == '-purchase_price' %}▼{% else %}▾{% endif %}</span>
+                <th class="sortable text-right" data-sort="purchase_price" style="width: 120px;">
+                    <i class="bi bi-cart me-1"></i>
+                    Покупка
+                    <span class="sort-icon">{% if sort_by == 'purchase_price' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-purchase_price' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable text-right" data-sort="sale_price">
-                    Цена продажи
-                    <span class="sort-icon">{% if sort_by == 'sale_price' %}▲{% elif sort_by == '-sale_price' %}▼{% else %}▾{% endif %}</span>
+                <th class="sortable text-right" data-sort="sale_price" style="width: 120px;">
+                    <i class="bi bi-currency-dollar me-1"></i>
+                    Продажа
+                    <span class="sort-icon">{% if sort_by == 'sale_price' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-sale_price' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable text-center" data-sort="purchase_date">
+                <th class="sortable text-center" data-sort="purchase_date" style="width: 110px;">
+                    <i class="bi bi-calendar-check me-1"></i>
                     Дата покупки
-                    <span class="sort-icon">{% if sort_by == 'purchase_date' %}▲{% elif sort_by == '-purchase_date' %}▼{% else %}▾{% endif %}</span>
+                    <span class="sort-icon">{% if sort_by == 'purchase_date' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-purchase_date' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable text-center" data-sort="sale_date">
+                <th class="sortable text-center" data-sort="sale_date" style="width: 110px;">
+                    <i class="bi bi-calendar-x me-1"></i>
                     Дата продажи
-                    <span class="sort-icon">{% if sort_by == 'sale_date' %}▲{% elif sort_by == '-sale_date' %}▼{% else %}▾{% endif %}</span>
+                    <span class="sort-icon">{% if sort_by == 'sale_date' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-sale_date' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable text-right" data-sort="profit">
+                <th class="sortable text-right" data-sort="profit" style="width: 120px;">
+                    <i class="bi bi-trend-up me-1"></i>
                     Прибыль
-                    <span class="sort-icon">{% if sort_by == 'profit' %}▲{% elif sort_by == '-profit' %}▼{% else %}▾{% endif %}</span>
+                    <span class="sort-icon">{% if sort_by == 'profit' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-profit' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th style="width: 50px;" class="text-center">Удалить</th>
+                <th style="width: 60px;" class="text-center">
+                    <i class="bi bi-trash" title="Удалить"></i>
+                </th>
             </tr>
         </thead>
         <tbody>
             {% for item in items %}
             <tr data-item-id="{{ item.id }}" data-is-sold="{% if item.sale_price and item.sale_date %}true{% else %}false{% endif %}">
-                <td class="text-center">{{ forloop.counter }}</td>
-                <td class="editable-cell copy-on-click" data-field="name" title="Клик для копирования, двойной клик для редактирования">
+                <td class="text-center text-secondary">{{ forloop.counter }}</td>
+                <td class="editable-cell copy-on-click" data-field="name" title="Клик — копировать, двойной клик — редактировать">
                     <span class="display-value">{{ item.name }}</span>
                     <input type="text" class="edit-input" value="{{ item.name }}" style="display:none;">
                 </td>
@@ -112,60 +142,182 @@
                     <input type="date" class="edit-input" value="{{ item.purchase_date|date:'Y-m-d' }}" style="display:none;">
                 </td>
                 <td class="editable-cell text-center" data-field="sale_date">
-                    <span class="display-value">{{ item.sale_date|date:"d.m.y"|default:"" }}</span>
+                    <span class="display-value">{{ item.sale_date|date:"d.m.y"|default:"—" }}</span>
                     <input type="date" class="edit-input" value="{{ item.sale_date|date:'Y-m-d'|default:'' }}" style="display:none;">
                 </td>
-                <td class="profit-cell {% if item.sale_price is None %}no-sale-profit{% elif item.profit < 0 %}negative-profit{% elif item.profit > 0 %}positive-profit{% endif %}">
+                <td class="profit-cell {% if item.sale_price is None %}no-sale-profit{% elif item.profit == 0 %}zero-profit{% elif item.profit < 0 %}negative-profit{% elif item.profit > 0 %}positive-profit{% endif %}">
                     {% if item.sale_price is None %}-{{ item.purchase_price|format_price }}{% else %}{{ item.profit|format_price }}{% endif %}
                 </td>
                 <td class="text-center">
-                    <button class="btn btn-sm btn-danger delete-btn" data-item-id="{{ item.id }}" title="Удалить">
-                        &times;
+                    <button class="btn btn-sm btn-danger delete-btn" data-item-id="{{ item.id }}" title="Удалить предмет">
+                        <i class="bi bi-x-lg"></i>
                     </button>
                 </td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" class="text-center" style="color: var(--text-muted);">Нет предметов в базе данных</td>
+                <td colspan="8" class="text-center py-5">
+                    <i class="bi bi-inbox display-4 d-block mb-3" style="color: var(--text-secondary);"></i>
+                    <span style="color: var(--text-primary);">Нет предметов в базе данных</span>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 
-<!-- Модальное окно непредвиденных расходов -->
-<div class="modal fade" id="expenseModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+<!-- ==================== МОДАЛЬНЫЕ ОКНА ==================== -->
+
+<!-- Модальное окно добавления предмета -->
+<div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="addItemForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addItemModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Новый предмет
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="addItemName">
+                            <i class="bi bi-tag me-1"></i>Название предмета
+                        </label>
+                        <input type="text" name="name" id="addItemName" class="form-control" placeholder="Введите название" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="addItemPurchasePrice">
+                            <i class="bi bi-cart me-1"></i>Цена покупки
+                        </label>
+                        <input type="text" name="purchase_price" id="addItemPurchasePrice" class="form-control" placeholder="0 ₽" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="addItemSalePrice">
+                            <i class="bi bi-currency-dollar me-1"></i>Цена продажи
+                        </label>
+                        <input type="text" name="sale_price" id="addItemSalePrice" class="form-control" placeholder="0 ₽">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="addItemPurchaseDate">
+                            <i class="bi bi-calendar-check me-1"></i>Дата покупки
+                        </label>
+                        <input type="date" name="purchase_date" id="addItemPurchaseDate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="addItemSaleDate">
+                            <i class="bi bi-calendar-x me-1"></i>Дата продажи
+                        </label>
+                        <input type="date" name="sale_date" id="addItemSaleDate" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Отмена
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-1"></i>Добавить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно фильтра по дате -->
+<div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="dateFilterModalForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="dateFilterModalLabel">
+                        <i class="bi bi-funnel me-2"></i>Фильтр предметов
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="filterNameInput">
+                            <i class="bi bi-search me-1"></i>Поиск по названию
+                        </label>
+                        <input type="text" name="name" id="filterNameInput" class="form-control" placeholder="Введите название предмета">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="filterDateFrom">
+                            <i class="bi bi-calendar-check me-1"></i>Дата покупки с
+                        </label>
+                        <input type="date" name="date_from" id="filterDateFrom" class="form-control" value="{{ date_from|date:'Y-m-d' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="filterDateTo">
+                            <i class="bi bi-calendar-check me-1"></i>Дата покупки по
+                        </label>
+                        <input type="date" name="date_to" id="filterDateTo" class="form-control" value="{{ date_to|date:'Y-m-d' }}" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="weekBtn">
+                        <i class="bi bi-calendar-week me-1"></i>Неделя
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="todayBtn">
+                        <i class="bi bi-calendar-day me-1"></i>Сегодня
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="showAllBtn">
+                        <i class="bi bi-list-ul me-1"></i>Всё
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>Применить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно накладных расходов -->
+<div class="modal fade" id="expenseModal" tabindex="-1" aria-labelledby="expenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Накладные расходы</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="expenseModalLabel">
+                    <i class="bi bi-receipt me-2"></i>Накладные расходы
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
             <div class="modal-body">
-                <form id="addExpenseForm" class="mb-4">
+                <!-- Форма добавления расхода -->
+                <form id="addExpenseForm" class="mb-4 p-3" style="background: var(--bg-secondary); border-radius: 8px;">
                     {% csrf_token %}
-                    <h6>Добавить расходы</h6>
+                    <h6 class="mb-3">
+                        <i class="bi bi-plus-circle me-2"></i>Добавить расход
+                    </h6>
                     <div class="row g-2">
                         <div class="col-md-4">
                             <input type="date" name="date" class="form-control" required>
                         </div>
-                        <div class="col-md-4">
-                            <input type="text" name="amount" id="addExpenseAmount" class="form-control" placeholder="Сумма" required>
+                        <div class="col-md-5">
+                            <input type="text" name="amount" id="addExpenseAmount" class="form-control" placeholder="Сумма расхода" required>
                         </div>
-                        <div class="col-md-4">
-                            <button type="submit" class="btn btn-success w-100">Добавить</button>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-check-lg me-1"></i>Добавить
+                            </button>
                         </div>
                     </div>
                 </form>
 
-                <h6>Список расходов</h6>
+                <!-- Список расходов -->
+                <h6 class="mb-3">
+                    <i class="bi bi-list-ul me-2"></i>Список расходов
+                </h6>
                 <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
-                    <table class="table table-sm table-bordered">
+                    <table class="table table-excel table-sm table-bordered mb-0">
                         <thead>
                             <tr>
-                                <th>Дата</th>
+                                <th style="width: 120px;">Дата</th>
                                 <th>Сумма</th>
-                                <th style="width: 80px;">Действия</th>
+                                <th style="width: 100px;" class="text-center">Действия</th>
                             </tr>
                         </thead>
                         <tbody id="expenseListBody">
@@ -174,111 +326,48 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Закрыть
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Модальное окно редактирования расходов -->
-<div class="modal fade" id="editExpenseModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="editExpenseModal" tabindex="-1" aria-labelledby="editExpenseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form id="editExpenseForm">
                 {% csrf_token %}
                 <input type="hidden" name="expense_id" id="editExpenseId">
                 <div class="modal-header">
-                    <h5 class="modal-title">Редактирование расходов</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title" id="editExpenseModalLabel">
+                        <i class="bi bi-pencil me-2"></i>Редактирование расхода
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label class="form-label">Дата</label>
+                        <label class="form-label" for="editExpenseDate">
+                            <i class="bi bi-calendar me-1"></i>Дата
+                        </label>
                         <input type="date" name="date" id="editExpenseDate" class="form-control" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Сумма</label>
+                        <label class="form-label" for="editExpenseAmount">
+                            <i class="bi bi-currency-dollar me-1"></i>Сумма
+                        </label>
                         <input type="text" name="amount" id="editExpenseAmount" class="form-control" required>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно добавления предмета -->
-<div class="modal fade" id="addItemModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="addItemForm">
-                {% csrf_token %}
-                <div class="modal-header">
-                    <h5 class="modal-title">Добавить новый предмет</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Название предмета</label>
-                        <input type="text" name="name" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Цена покупки</label>
-                        <input type="text" name="purchase_price" id="addItemPurchasePrice" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Цена продажи</label>
-                        <input type="text" name="sale_price" id="addItemSalePrice" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Дата покупки</label>
-                        <input type="date" name="purchase_date" id="addItemPurchaseDate" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Дата продажи</label>
-                        <input type="date" name="sale_date" class="form-control">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-success">Добавить</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Модальное окно фильтра по дате -->
-<div class="modal fade" id="dateFilterModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form id="dateFilterModalForm">
-                <div class="modal-header">
-                    <h5 class="modal-title">Фильтр</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Название:</label>
-                        <input type="text" name="name" id="filterNameInput" class="form-control" placeholder="Введите название предмета">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Дата покупки с:</label>
-                        <input type="date" name="date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Дата покупки по:</label>
-                        <input type="date" name="date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}" required>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-primary" id="weekBtn">Неделя</button>
-                    <button type="button" class="btn btn-outline-primary" id="todayBtn">Сегодня</button>
-                    <button type="button" class="btn btn-outline-secondary" id="showAllBtn">Отобразить всё</button>
-                    <button type="submit" class="btn btn-primary">Применить</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Отмена
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>Сохранить
+                    </button>
                 </div>
             </form>
         </div>
@@ -286,40 +375,53 @@
 </div>
 
 <!-- Модальное окно подтверждения удаления -->
-<div class="modal fade" id="deleteModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Подтверждение удаления</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Подтверждение удаления
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
             <div class="modal-body">
-                <p>Вы уверены, что хотите удалить этот предмет?</p>
+                <p class="mb-0">
+                    <i class="bi bi-question-circle me-2"></i>
+                    Вы уверены, что хотите удалить этот предмет? Это действие нельзя отменить.
+                </p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Отмена
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="bi bi-trash me-1"></i>Удалить
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Модальное окно добавления значения к цене покупки -->
-<div class="modal fade" id="addPurchasePriceModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="addPurchasePriceModal" tabindex="-1" aria-labelledby="addPurchasePriceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Добавить к цене покупки</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="addPurchasePriceModalLabel">
+                    <i class="bi bi-plus-circle me-2"></i>Добавить к цене покупки
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
                     <label class="form-label">Текущая цена покупки:</label>
-                    <span id="currentPurchasePrice" class="fs-5 fw-bold"></span>
+                    <span id="currentPurchasePrice" class="fs-5 fw-bold text-info"></span>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label" for="addPriceAmount">Добавить сумму:</label>
-                    <input type="text" id="addPriceAmount" class="form-control" placeholder="Введите сумму">
+                    <label class="form-label" for="addPriceAmount">
+                        <i class="bi bi-plus-lg me-1"></i>Добавить сумму:
+                    </label>
+                    <input type="text" id="addPriceAmount" class="form-control" placeholder="0 ₽">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Новая цена покупки:</label>
@@ -327,8 +429,12 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="button" class="btn btn-success" id="confirmAddPriceBtn">Добавить</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Отмена
+                </button>
+                <button type="button" class="btn btn-success" id="confirmAddPriceBtn">
+                    <i class="bi bi-check-circle me-1"></i>Добавить
+                </button>
             </div>
         </div>
     </div>
@@ -336,7 +442,11 @@
 
 <!-- Контекстное меню для цены покупки -->
 <div id="purchasePriceContextMenu" class="context-menu">
-    <div class="context-menu-item" id="ctxMenuEdit">Изменить</div>
-    <div class="context-menu-item" id="ctxMenuAdd">Добавить</div>
+    <div class="context-menu-item" id="ctxMenuEdit">
+        <i class="bi bi-pencil"></i> Изменить
+    </div>
+    <div class="context-menu-item" id="ctxMenuAdd">
+        <i class="bi bi-plus-lg"></i> Добавить
+    </div>
 </div>
 {% endblock %}
