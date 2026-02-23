@@ -13,10 +13,10 @@
         </h2>
     </div>
     <div class="col-md-4 text-md-end mt-3 mt-md-0">
-        <button type="button" class="btn btn-secondary" onclick="history.back()">
-            <i class="bi bi-arrow-left me-1"></i>
+        <a href="{% url 'items:item_list' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&hide_sold={{ hide_sold }}&name={{ name_filter }}&sort={{ sort_by }}" class="btn btn-secondary">
+            <i class="bi bi-house-door me-1"></i>
             На главную
-        </button>
+        </a>
     </div>
 </div>
 
@@ -28,6 +28,11 @@
     </div>
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end" id="analyticsFilterForm">
+            <!-- Скрытые поля для сохранения параметров фильтра -->
+            <input type="hidden" name="hide_sold" id="hideSold" value="{{ hide_sold }}">
+            <input type="hidden" name="name" id="nameFilter" value="{{ name_filter }}">
+            <input type="hidden" name="sort" id="sortBy" value="{{ sort_by }}">
+            
             <!-- Быстрые фильтры -->
             <div class="col-12 mb-2">
                 <div class="d-flex gap-2">
@@ -45,7 +50,7 @@
                     </button>
                 </div>
             </div>
-            
+
             <!-- Поля дат и кнопка -->
             <div class="col-md-4">
                 <label class="form-label" for="dateFrom">
@@ -72,20 +77,62 @@
     </div>
 </div>
 
-<!-- Общая прибыль -->
-<div class="card mb-4">
-    <div class="card-body">
-        <div class="row align-items-center">
-            <div class="col-md-8 d-flex align-items-center">
-                <div>
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-trophy me-2"></i>
-                        Общая прибыль за период
-                    </h5>
-                </div>
+<!-- Сводка по финансам -->
+<div class="row mb-4">
+    <!-- Валовая прибыль -->
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-white small text-uppercase mb-2">
+                    <i class="bi bi-currency-dollar me-1"></i>
+                    Валовая прибыль
+                </h6>
+                <p class="fs-4 mb-0 text-success">
+                    <strong>{{ gross_profit|format_price }}</strong>
+                </p>
             </div>
-            <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <p class="fs-2 mb-0 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% else %}text-secondary{% endif %}">
+        </div>
+    </div>
+    
+    <!-- Накладные расходы -->
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-white small text-uppercase mb-2">
+                    <i class="bi bi-receipt me-1"></i>
+                    Накладные расходы
+                </h6>
+                <p class="fs-4 mb-0 text-danger">
+                    <strong>{{ total_expenses|format_price }}</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Зарезервировано -->
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-white small text-uppercase mb-2">
+                    <i class="bi bi-piggy-bank me-1"></i>
+                    Зарезервировано
+                </h6>
+                <p class="fs-4 mb-0 text-secondary">
+                    <strong>{{ reserved_amount|format_price }}</strong>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Чистая прибыль -->
+    <div class="col-md-6 col-lg-3 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6 class="text-white small text-uppercase mb-2">
+                    <i class="bi bi-trophy me-2"></i>
+                    Чистая прибыль
+                </h6>
+                <p class="fs-4 mb-0 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% else %}text-secondary{% endif %}">
                     <strong>{{ total_profit|format_price }}</strong>
                 </p>
             </div>
@@ -217,7 +264,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return 'Прибыль: ' + formatPrice(context.parsed.x);
+                                const date = context.label;
+                                // Форматируем дату из YYYY-MM-DD в DD.MM.YYYY
+                                const [year, month, day] = date.split('-');
+                                const formattedDate = `${day}.${month}.${year}`;
+                                return `Дата: ${formattedDate} | Прибыль: ${formatPrice(context.parsed.x)}`;
                             }
                         },
                         backgroundColor: 'rgba(30, 30, 30, 0.95)',
@@ -228,6 +279,20 @@ document.addEventListener('DOMContentLoaded', function() {
                         padding: 12,
                         displayColors: true,
                         cornerRadius: 6
+                    }
+                },
+                onClick: function(evt, elements) {
+                    if (elements.length > 0) {
+                        const index = elements[0].index;
+                        const selectedDate = labels[index];
+                        // Форматируем дату из YYYY-MM-DD в YYYY-MM-DD для URL
+                        const url = "{% url 'items:item_list' %}" +
+                            '?date_from=' + selectedDate +
+                            '&date_to=' + selectedDate +
+                            '&hide_sold=false' +
+                            '&name=' + encodeURIComponent('{{ name_filter|default:"" }}') +
+                            '&sort=' + encodeURIComponent('{{ sort_by|default:"" }}');
+                        window.location.href = url;
                     }
                 },
                 scales: {

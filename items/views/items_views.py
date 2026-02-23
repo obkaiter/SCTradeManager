@@ -30,11 +30,25 @@ def analytics(request):
     labels = []
     data = []
     for entry in daily_profit:
-        labels.append(entry['sale_date'].strftime('%d.%m.%Y'))
+        labels.append(entry['sale_date'].strftime('%Y-%m-%d'))
         data.append(entry['total_profit'] or 0)
 
-    # Считаем общую прибыль за период
-    total_profit = sum(data)
+    # Считаем общую прибыль за период (без учёта расходов)
+    gross_profit = sum(data)
+
+    # Считаем расходы за период
+    expenses = ExpenseService.get_expenses_in_period(date_from, date_to)
+    total_expenses = ExpenseService.calculate_total_expenses(expenses)
+
+    # Считаем чистую прибыль (с учётом расходов)
+    total_profit = gross_profit - total_expenses
+
+    # Считаем зарезервированную сумму (предметы без даты продажи, купленные в периоде)
+    items_in_period = Item.objects.filter(
+        purchase_date__gte=date_from,
+        purchase_date__lte=date_to
+    )
+    reserved_amount = ItemService.calculate_reserved_amount(items_in_period)
 
     # Преобразуем строки в datetime для шаблона
     try:
@@ -44,12 +58,23 @@ def analytics(request):
         date_from_obj = timezone.now() - timedelta(days=30)
         date_to_obj = timezone.now()
 
+    # Получаем дополнительные параметры фильтра для кнопки "На главную"
+    hide_sold = request.GET.get('hide_sold', 'false')
+    name_filter = request.GET.get('name', '')
+    sort_by = request.GET.get('sort', '-purchase_date')
+
     return render(request, 'items/analytics.html', {
         'labels': labels,
         'data': data,
         'date_from': date_from_obj,
         'date_to': date_to_obj,
         'total_profit': total_profit,
+        'gross_profit': gross_profit,
+        'total_expenses': total_expenses,
+        'reserved_amount': reserved_amount,
+        'hide_sold': hide_sold,
+        'name_filter': name_filter,
+        'sort_by': sort_by,
     })
 
 

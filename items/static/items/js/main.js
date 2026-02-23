@@ -99,6 +99,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Обновление кнопки фильтра при загрузке
     updateFilterButtonLabels();
+
+    // Обработчик кнопки "Аналитика" - передача текущих параметров фильтра
+    const analyticsLink = document.getElementById('analyticsLink');
+    if (analyticsLink) {
+        analyticsLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            const urlParams = new URLSearchParams(window.location.search);
+            // Сохраняем все текущие параметры
+            const dateFrom = urlParams.get('date_from') || '';
+            const dateTo = urlParams.get('date_to') || '';
+            const hideSold = urlParams.get('hide_sold') || 'false';
+            const name = urlParams.get('name') || '';
+            const sort = urlParams.get('sort') || '-purchase_date';
+            
+            // Формируем URL с параметрами
+            const params = new URLSearchParams({
+                date_from: dateFrom,
+                date_to: dateTo,
+                hide_sold: hideSold,
+                name: name,
+                sort: sort
+            });
+            window.location.href = '/items/analytics/?' + params.toString();
+        });
+    }
 });
 
 /**
