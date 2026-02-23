@@ -1,14 +1,24 @@
 /**
- * Логика редактирования предметов в таблице.
- * Версия 2.0 - улучшенный UX
+ * Логика редактирования предметов в таблице
  */
+
+// Константы
+const DELAY_DOUBLE_CLICK = 200;
+const DELAY_PAGE_RELOAD = 600;
 
 // Переменные для контекстного меню
 let contextMenuCell = null;
 let contextMenu = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Глобальная блокировка стандартного контекстного меню браузера для ячеек purchase_price
+    initContextMenuGlobal();
+    initCopyOnClick();
+});
+
+/**
+ * Глобальная инициализация контекстного меню для purchase_price
+ */
+function initContextMenuGlobal() {
     document.addEventListener('contextmenu', function(e) {
         const target = e.target.closest('.price-cell[data-field="purchase_price"]');
         if (target) {
@@ -19,8 +29,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     });
+}
 
-    // Обработчик клика для копирования названия предмета
+/**
+ * Инициализация копирования названия предмета
+ */
+function initCopyOnClick() {
     let clickTimeout = null;
     let lastClickedCell = null;
 
@@ -30,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             e.stopPropagation();
 
-            // Если кликнули по той же ячейке второй раз - это двойной клик, отменяем копирование
             if (lastClickedCell === cell && clickTimeout) {
                 clearTimeout(clickTimeout);
                 clickTimeout = null;
@@ -38,26 +51,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Отменяем предыдущий таймер если был
-            if (clickTimeout) {
-                clearTimeout(clickTimeout);
-            }
+            if (clickTimeout) clearTimeout(clickTimeout);
 
             lastClickedCell = cell;
-
-            // Задержка для определения двойного клика
-            clickTimeout = setTimeout(function() {
+            clickTimeout = setTimeout(() => {
                 copyItemName(cell);
                 clickTimeout = null;
                 lastClickedCell = null;
-            }, 200);
+            }, DELAY_DOUBLE_CLICK);
         }
     });
-});
+}
 
 /**
  * Копирование названия предмета в буфер обмена
- * @param {HTMLElement} cell - Ячейка с названием предмета
  */
 function copyItemName(cell) {
     const displayValue = cell.querySelector('.display-value');
@@ -66,14 +73,11 @@ function copyItemName(cell) {
     const itemName = displayValue.textContent.trim();
     if (!itemName) return;
 
-    navigator.clipboard.writeText(itemName).then(function() {
-        // Визуальная обратная связь
+    navigator.clipboard.writeText(itemName).then(() => {
         cell.classList.add('copied');
         showToast(`"${itemName}" скопировано в буфер обмена`, 'success', 2000);
-        setTimeout(function() {
-            cell.classList.remove('copied');
-        }, 800);
-    }).catch(function(err) {
+        setTimeout(() => cell.classList.remove('copied'), 800);
+    }).catch(() => {
         // Fallback для старых браузеров
         const textArea = document.createElement('textarea');
         textArea.value = itemName;
@@ -85,11 +89,8 @@ function copyItemName(cell) {
             document.execCommand('copy');
             cell.classList.add('copied');
             showToast(`"${itemName}" скопировано в буфер обмена`, 'success', 2000);
-            setTimeout(function() {
-                cell.classList.remove('copied');
-            }, 800);
+            setTimeout(() => cell.classList.remove('copied'), 800);
         } catch (err) {
-            console.error('Не удалось скопировать текст', err);
             showToast('Не удалось скопировать текст', 'error');
         }
         document.body.removeChild(textArea);
@@ -98,7 +99,6 @@ function copyItemName(cell) {
 
 /**
  * Инициализация редактируемых ячеек
- * @param {NodeList} cells - Коллекция редактируемых ячеек
  */
 function initEditableCells(cells) {
     cells.forEach(cell => {
@@ -108,26 +108,16 @@ function initEditableCells(cells) {
 
         if (!displayValue || !editInput) return;
 
-        // Форматируем цену при инициализации
-        if (field === 'purchase_price' || field === 'sale_price') {
-            const rawValue = editInput.value;
-            if (rawValue) {
-                editInput.value = formatPrice(rawValue);
-            }
-        }
-
-        // Выделение текста при фокусе
+        // Фокус - выделение
         editInput.addEventListener('focus', function() {
             if (field === 'purchase_price' || field === 'sale_price') {
-                const rawValue = parsePrice(this.value);
-                this.value = rawValue;
+                this.value = parsePrice(this.value);
                 this.select();
             }
         });
 
         // Дабл-клик для редактирования
         cell.addEventListener('dblclick', function() {
-            // Синхронизируем значение input с текущим отображаемым значением
             if (field === 'purchase_price' || field === 'sale_price') {
                 const rawValue = parsePrice(displayValue.textContent);
                 editInput.value = rawValue;
@@ -139,21 +129,17 @@ function initEditableCells(cells) {
             editInput.focus();
         });
 
-        // Форматирование при потере фокуса и сохранение
+        // Blur - сохранение
         editInput.addEventListener('blur', function() {
             if (field === 'purchase_price' || field === 'sale_price') {
                 const rawValue = parsePrice(this.value);
-                if (rawValue) {
-                    this.value = formatPrice(rawValue);
-                }
+                if (rawValue) this.value = formatPrice(rawValue);
             }
             saveCellValue(cell);
         });
 
         editInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                editInput.blur();
-            }
+            if (e.key === 'Enter') editInput.blur();
         });
 
         editInput.addEventListener('keydown', function(e) {
@@ -164,13 +150,11 @@ function initEditableCells(cells) {
         });
     });
 
-    // Инициализация контекстного меню
     initContextMenu();
 }
 
 /**
  * Сохранение значения ячейки на сервер
- * @param {HTMLElement} cell - Редактируемая ячейка
  */
 function saveCellValue(cell) {
     const row = cell.closest('tr');
@@ -181,13 +165,12 @@ function saveCellValue(cell) {
 
     if (!itemId || !editInput || !displayValue) return;
 
-    // Получаем значение
     let newValue = editInput.value;
     if (field === 'purchase_price' || field === 'sale_price') {
         newValue = parsePrice(editInput.value);
     }
 
-    // Если значение не изменилось - закрываем режим редактирования
+    // Проверка на изменение
     const currentValue = parsePrice(displayValue.textContent);
     if (newValue === currentValue || newValue === displayValue.textContent) {
         editInput.style.display = 'none';
@@ -195,159 +178,79 @@ function saveCellValue(cell) {
         return;
     }
 
-    // Если изменяем цену продажи и дата продажи пустая - выставляем текущую
-    if (field === 'sale_price' && newValue !== '') {
-        const saleDateCell = row.querySelector('[data-field="sale_date"]');
-        const saleDateDisplay = saleDateCell?.querySelector('.display-value');
-        const saleDateInput = saleDateCell?.querySelector('.edit-input');
-
-        if (saleDateDisplay && (!saleDateDisplay.textContent || saleDateDisplay.textContent.trim() === '' || saleDateDisplay.textContent.trim() === '—')) {
-            const today = new Date().toISOString().split('T')[0];
-            const formatted = formatDate(new Date());
-
-            // Сначала обновляем дату продажи, затем цену продажи
-            fetch(`/items/${itemId}/update/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: `field=sale_date&value=${encodeURIComponent(today)}`
-            })
-            .then(response => response.json())
-            .then(dateData => {
-                if (dateData.success && saleDateDisplay && saleDateInput) {
-                    saleDateDisplay.textContent = formatted;
-                    saleDateInput.value = today;
-                    // После обновления даты продажим обновляем цену продажи
-                    return fetch(`/items/${itemId}/update/`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': getCookie('csrftoken')
-                        },
-                        body: `field=${field}&value=${encodeURIComponent(newValue)}`
-                    });
-                }
-                // Если дата не была обновлена, всё равно обновляем цену
-                return fetch(`/items/${itemId}/update/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: `field=${field}&value=${encodeURIComponent(newValue)}`
-                });
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.success) {
-                    updateCellDisplay(cell, row, field, data, newValue);
-                    showToast('Цена продажи обновлена', 'success', 1500);
-                    // Перезагружаем страницу для обновления сводки
-                    setTimeout(() => {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        window.location.href = '?' + urlParams.toString();
-                    }, 600);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Ошибка при сохранении', 'error');
-            })
-            .finally(() => {
-                editInput.style.display = 'none';
-                displayValue.style.display = 'inline';
-            });
-
-            return;
+    // Обработка special случаев для sale_price
+    if (field === 'sale_price') {
+        if (newValue !== '') {
+            updateSalePriceWithDate(itemId, row, cell, field, newValue);
+        } else {
+            clearSalePriceAndDate(itemId, row, cell, newValue);
         }
+        return;
     }
 
-    // Если очищаем цену продажи — также очищаем дату продажи
-    if (field === 'sale_price' && newValue === '') {
-        const saleDateCell = row.querySelector('[data-field="sale_date"]');
-        const saleDateDisplay = saleDateCell?.querySelector('.display-value');
-        const saleDateInput = saleDateCell?.querySelector('.edit-input');
+    // Основной запрос
+    updateItemField(itemId, field, newValue)
+        .then(data => {
+            if (data.success) {
+                updateCellDisplay(cell, row, field, data, newValue);
+                showToast('Изменения сохранены', 'success', 1500);
+                reloadPageWithParams();
+            } else {
+                showToast('Ошибка: ' + (data.error || ''), 'error');
+            }
+        })
+        .catch(() => showToast('Ошибка при сохранении', 'error'))
+        .finally(() => {
+            editInput.style.display = 'none';
+            displayValue.style.display = 'inline';
+        });
+}
 
-        if (saleDateDisplay && saleDateDisplay.textContent && saleDateDisplay.textContent.trim() !== '' && saleDateDisplay.textContent.trim() !== '—') {
-            // Очищаем дату продажи
-            fetch(`/items/${itemId}/update/`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': getCookie('csrftoken')
-                },
-                body: `field=sale_date&value=`
-            })
-            .then(response => response.json())
-            .then(dateData => {
-                if (dateData.success && saleDateDisplay && saleDateInput) {
-                    saleDateDisplay.textContent = '—';
-                    saleDateInput.value = '';
-                }
-                // Затем обновляем цену продажи
-                return fetch(`/items/${itemId}/update/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: `field=${field}&value=`
-                });
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data && data.success) {
-                    updateCellDisplay(cell, row, field, data, newValue);
-                    showToast('Цена продажи и дата продажи очищены', 'success', 1500);
-                    // Перезагружаем страницу для обновления сводки
-                    setTimeout(() => {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        window.location.href = '?' + urlParams.toString();
-                    }, 600);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('Ошибка при сохранении', 'error');
-            })
-            .finally(() => {
-                editInput.style.display = 'none';
-                displayValue.style.display = 'inline';
-            });
+/**
+ * Обновление цены продажи с установкой даты
+ */
+function updateSalePriceWithDate(itemId, row, cell, field, newValue) {
+    const saleDateCell = row.querySelector('[data-field="sale_date"]');
+    const saleDateDisplay = saleDateCell?.querySelector('.display-value');
+    const saleDateInput = saleDateCell?.querySelector('.edit-input');
+    const editInput = cell.querySelector('.edit-input');
+    const displayValue = cell.querySelector('.display-value');
 
-            return;
-        }
+    if (!saleDateDisplay || saleDateDisplay.textContent.trim() !== '—') {
+        // Дата уже установлена, просто обновляем цену
+        updateItemField(itemId, field, newValue)
+            .then(handleUpdateResponse(cell, row, field, newValue, 'Цена продажи обновлена'))
+            .catch(handleUpdateError(editInput, displayValue));
+        return;
     }
 
-    // Основной запрос на обновление
+    const today = new Date().toISOString().split('T')[0];
+    const formatted = formatDate(new Date());
+
     fetch(`/items/${itemId}/update/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
             'X-CSRFToken': getCookie('csrftoken')
         },
-        body: `field=${field}&value=${encodeURIComponent(newValue)}`
+        body: `field=sale_date&value=${encodeURIComponent(today)}`
     })
-    .then(response => response.json())
+    .then(r => r.json())
+    .then(dateData => {
+        if (dateData.success && saleDateDisplay && saleDateInput) {
+            saleDateDisplay.textContent = formatted;
+            saleDateInput.value = today;
+        }
+        return updateItemField(itemId, field, newValue);
+    })
     .then(data => {
-        if (data.success) {
+        if (data && data.success) {
             updateCellDisplay(cell, row, field, data, newValue);
-            showToast('Изменения сохранены', 'success', 1500);
-            // Перезагружаем страницу для обновления сводки
-            setTimeout(() => {
-                const urlParams = new URLSearchParams(window.location.search);
-                window.location.href = '?' + urlParams.toString();
-            }, 600);
-        } else {
-            showToast('Ошибка при сохранении: ' + (data.error || ''), 'error');
+            showToast('Цена продажи обновлена', 'success', 1500);
+            reloadPageWithParams();
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('Ошибка при сохранении', 'error');
-    })
+    .catch(() => showToast('Ошибка при сохранении', 'error'))
     .finally(() => {
         editInput.style.display = 'none';
         displayValue.style.display = 'inline';
@@ -355,12 +258,105 @@ function saveCellValue(cell) {
 }
 
 /**
- * Обновление отображения ячейки после сохранения
- * @param {HTMLElement} cell - Ячейка
- * @param {HTMLElement} row - Строка таблицы
- * @param {string} field - Поле
- * @param {Object} data - Данные от сервера
- * @param {string} newValue - Новое значение
+ * Очистка цены продажи и даты продажи
+ */
+function clearSalePriceAndDate(itemId, row, cell, newValue) {
+    const saleDateCell = row.querySelector('[data-field="sale_date"]');
+    const saleDateDisplay = saleDateCell?.querySelector('.display-value');
+    const saleDateInput = saleDateCell?.querySelector('.edit-input');
+    const editInput = cell.querySelector('.edit-input');
+    const displayValue = cell.querySelector('.display-value');
+
+    if (!saleDateDisplay || saleDateDisplay.textContent.trim() === '—') {
+        // Дата уже пустая, просто очищаем цену
+        updateItemField(itemId, 'sale_price', '')
+            .then(handleUpdateResponse(cell, row, 'sale_price', '', 'Цена продажи очищена'))
+            .catch(handleUpdateError(editInput, displayValue));
+        return;
+    }
+
+    fetch(`/items/${itemId}/update/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: 'field=sale_date&value='
+    })
+    .then(r => r.json())
+    .then(dateData => {
+        if (dateData.success && saleDateDisplay && saleDateInput) {
+            saleDateDisplay.textContent = '—';
+            saleDateInput.value = '';
+        }
+        return updateItemField(itemId, 'sale_price', '');
+    })
+    .then(data => {
+        if (data && data.success) {
+            updateCellDisplay(cell, row, 'sale_price', data, newValue);
+            showToast('Цена продажи и дата продажи очищены', 'success', 1500);
+            reloadPageWithParams();
+        }
+    })
+    .catch(() => showToast('Ошибка при сохранении', 'error'))
+    .finally(() => {
+        editInput.style.display = 'none';
+        displayValue.style.display = 'inline';
+    });
+}
+
+/**
+ * Обновление поля предмета
+ */
+function updateItemField(itemId, field, value) {
+    return fetch(`/items/${itemId}/update/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `field=${field}&value=${encodeURIComponent(value)}`
+    }).then(r => r.json());
+}
+
+/**
+ * Обработчик успешного ответа
+ */
+function handleUpdateResponse(cell, row, field, newValue, message) {
+    return data => {
+        if (data.success) {
+            updateCellDisplay(cell, row, field, data, newValue);
+            showToast(message, 'success', 1500);
+            reloadPageWithParams();
+        } else {
+            showToast('Ошибка: ' + (data.error || ''), 'error');
+        }
+    };
+}
+
+/**
+ * Обработчик ошибки
+ */
+function handleUpdateError(editInput, displayValue) {
+    return () => {
+        showToast('Ошибка при сохранении', 'error');
+        editInput.style.display = 'none';
+        displayValue.style.display = 'inline';
+    };
+}
+
+/**
+ * Перезагрузка страницы с сохранением параметров
+ */
+function reloadPageWithParams() {
+    setTimeout(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        window.location.href = '?' + urlParams.toString();
+    }, DELAY_PAGE_RELOAD);
+}
+
+/**
+ * Обновление отображения ячейки
  */
 function updateCellDisplay(cell, row, field, data, newValue) {
     const displayValue = cell.querySelector('.display-value');
@@ -369,44 +365,29 @@ function updateCellDisplay(cell, row, field, data, newValue) {
     if (field === 'purchase_price' || field === 'sale_price') {
         const numValue = parseFloat(data.value) || 0;
         displayValue.textContent = numValue.toLocaleString('ru-RU') + ' ₽';
-        if (editInput) {
-            editInput.value = numValue.toLocaleString('ru-RU') + ' ₽';
-        }
-
+        if (editInput) editInput.value = numValue.toLocaleString('ru-RU') + ' ₽';
         updateProfitCell(row, field, numValue, data, newValue);
     } else if (field === 'purchase_date' || field === 'sale_date') {
         if (data.value) {
-            const formatted = formatDate(data.value);
-            displayValue.textContent = formatted;
-            if (editInput) {
-                editInput.value = data.value;
-            }
+            displayValue.textContent = formatDate(data.value);
+            if (editInput) editInput.value = data.value;
         } else {
             displayValue.textContent = '—';
-            if (editInput) {
-                editInput.value = '';
-            }
+            if (editInput) editInput.value = '';
         }
     } else {
         displayValue.textContent = data.value || '';
-        if (editInput) {
-            editInput.value = data.value || '';
-        }
+        if (editInput) editInput.value = data.value || '';
     }
 }
 
 /**
  * Обновление ячейки прибыли
- * @param {HTMLElement} row - Строка таблицы
- * @param {string} field - Изменённое поле
- * @param {number} numValue - Числовое значение цены
- * @param {Object} data - Данные от сервера
- * @param {string} newValue - Новое значение
  */
 function updateProfitCell(row, field, numValue, data, newValue) {
     const profitCell = row.querySelector('.profit-cell');
 
-    // Если сервер вернул прибыль - используем её
+    // Сервер вернул прибыль
     if (data.profit !== undefined && data.profit !== '' && data.profit !== null) {
         const profitValue = parseFloat(data.profit);
         profitCell.textContent = profitValue.toLocaleString('ru-RU') + ' ₽';
@@ -421,42 +402,48 @@ function updateProfitCell(row, field, numValue, data, newValue) {
         return;
     }
 
-    // Товар не продан (sale_price пустой) - прибыль = -purchase_price
+    // Товар не продан - прибыль = -purchase_price
     if (field === 'sale_price' && newValue === '') {
-        const purchasePriceCell = row.querySelector('[data-field="purchase_price"]');
-        const purchasePriceText = purchasePriceCell?.querySelector('.display-value')?.textContent || '0';
-        const purchasePrice = parseInt(parsePrice(purchasePriceText)) || 0;
+        const purchasePrice = getPurchasePrice(row);
         profitCell.textContent = '-' + formatPrice(purchasePrice);
         profitCell.classList.remove('negative-profit', 'positive-profit', 'zero-profit');
         profitCell.classList.add('no-sale-profit');
         return;
     }
 
-    // Изменение цены покупки - если товар не продан
+    // Изменение цены покупки
     if (field === 'purchase_price') {
-        const salePriceCell = row.querySelector('[data-field="sale_price"]');
-        const salePriceText = salePriceCell?.querySelector('.display-value')?.textContent || '';
-        const salePrice = parseInt(parsePrice(salePriceText)) || null;
-
-        if (salePrice === null || salePriceText === '') {
-            // Товар не продан - прибыль = -purchase_price
+        const salePrice = getSalePrice(row);
+        if (salePrice === null) {
             profitCell.textContent = '-' + formatPrice(numValue);
             profitCell.classList.remove('negative-profit', 'positive-profit', 'zero-profit');
             profitCell.classList.add('no-sale-profit');
         } else {
-            // Товар продан
             const profit = salePrice - numValue;
             profitCell.textContent = profit.toLocaleString('ru-RU') + ' ₽';
             profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit', 'zero-profit');
-            if (profit < 0) {
-                profitCell.classList.add('negative-profit');
-            } else if (profit > 0) {
-                profitCell.classList.add('positive-profit');
-            } else {
-                profitCell.classList.add('zero-profit');
-            }
+            profitCell.classList.add(profit < 0 ? 'negative-profit' : profit > 0 ? 'positive-profit' : 'zero-profit');
         }
     }
+}
+
+/**
+ * Получить цену покупки из строки
+ */
+function getPurchasePrice(row) {
+    const cell = row.querySelector('[data-field="purchase_price"]');
+    const text = cell?.querySelector('.display-value')?.textContent || '0';
+    return parseInt(parsePrice(text)) || 0;
+}
+
+/**
+ * Получить цену продажи из строки
+ */
+function getSalePrice(row) {
+    const cell = row.querySelector('[data-field="sale_price"]');
+    const text = cell?.querySelector('.display-value')?.textContent || '';
+    const parsed = parseInt(parsePrice(text));
+    return isNaN(parsed) || !text ? null : parsed;
 }
 
 /**
@@ -469,7 +456,6 @@ function initContextMenu() {
     const editItem = document.getElementById('ctxMenuEdit');
     const addItem = document.getElementById('ctxMenuAdd');
 
-    // Пункт "Изменить"
     editItem.addEventListener('click', function(e) {
         e.stopPropagation();
         hideContextMenu();
@@ -484,25 +470,15 @@ function initContextMenu() {
         }
     });
 
-    // Пункт "Добавить"
     addItem.addEventListener('click', function(e) {
         e.stopPropagation();
         hideContextMenu();
-        if (contextMenuCell) {
-            openAddPriceModal(contextMenuCell);
-        }
+        if (contextMenuCell) openAddPriceModal(contextMenuCell);
     });
 
-    // Закрытие контекстного меню при клике вне его
-    document.addEventListener('click', function() {
-        hideContextMenu();
-    });
-
-    // Предотвращаем всплытие клика по контекстному меню
-    contextMenu.addEventListener('click', function(e) {
-        e.stopPropagation();
-    });
-    contextMenu.addEventListener('contextmenu', function(e) {
+    document.addEventListener('click', hideContextMenu);
+    contextMenu.addEventListener('click', e => e.stopPropagation());
+    contextMenu.addEventListener('contextmenu', e => {
         e.preventDefault();
         e.stopPropagation();
     });
@@ -510,8 +486,6 @@ function initContextMenu() {
 
 /**
  * Показать контекстное меню
- * @param {number} x - Координата X
- * @param {number} y - Координата Y
  */
 function showContextMenu(x, y) {
     if (!contextMenu) return;
@@ -520,7 +494,6 @@ function showContextMenu(x, y) {
     contextMenu.style.left = x + 'px';
     contextMenu.style.top = y + 'px';
 
-    // Проверка выхода за границы экрана
     const rect = contextMenu.getBoundingClientRect();
     if (x + rect.width > window.innerWidth) {
         contextMenu.style.left = (x - rect.width) + 'px';
@@ -534,21 +507,17 @@ function showContextMenu(x, y) {
  * Скрыть контекстное меню
  */
 function hideContextMenu() {
-    if (contextMenu) {
-        contextMenu.style.display = 'none';
-    }
+    if (contextMenu) contextMenu.style.display = 'none';
 }
 
 /**
- * Открыть модальное окно добавления значения к цене покупки
- * @param {HTMLElement} cell - Ячейка с ценой покупки
+ * Открыть модальное окно добавления к цене покупки
  */
 function openAddPriceModal(cell) {
     const displayValue = cell.querySelector('.display-value');
     if (!displayValue) return;
 
     const currentPrice = parseInt(parsePrice(displayValue.textContent)) || 0;
-
     const modal = document.getElementById('addPurchasePriceModal');
     const currentPriceSpan = document.getElementById('currentPurchasePrice');
     const newPriceSpan = document.getElementById('newPurchasePrice');
@@ -557,18 +526,13 @@ function openAddPriceModal(cell) {
 
     if (!modal || !currentPriceSpan || !newPriceSpan || !amountInput || !confirmBtn) return;
 
-    // Отображаем текущую цену
     currentPriceSpan.textContent = formatPrice(currentPrice);
-
-    // Сбрасываем поле ввода
     amountInput.value = '';
     newPriceSpan.textContent = '';
 
-    // Обновляем новую цену при вводе
     const updateNewPrice = () => {
         const addAmount = parseInt(parsePrice(amountInput.value)) || 0;
-        const newPrice = currentPrice + addAmount;
-        newPriceSpan.textContent = formatPrice(newPrice);
+        newPriceSpan.textContent = formatPrice(currentPrice + addAmount);
     };
 
     amountInput.removeEventListener('input', updateNewPrice);
@@ -576,7 +540,6 @@ function openAddPriceModal(cell) {
 
     const bsModal = new bootstrap.Modal(modal);
 
-    // Обработчик кнопки "Добавить"
     const handleConfirm = () => {
         const addAmount = parseInt(parsePrice(amountInput.value)) || 0;
         if (addAmount === 0) {
@@ -584,45 +547,31 @@ function openAddPriceModal(cell) {
             return;
         }
 
-        const newPrice = currentPrice + addAmount;
         const row = cell.closest('tr');
         const itemId = row?.dataset.itemId;
-
         if (!itemId) {
             bsModal.hide();
             return;
         }
 
-        // Блокировка кнопки
         confirmBtn.disabled = true;
         confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Сохранение...';
 
-        fetch(`/items/${itemId}/update/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': getCookie('csrftoken')
-            },
-            body: `field=purchase_price&value=${encodeURIComponent(newPrice)}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                updateCellDisplay(cell, row, 'purchase_price', data, newPrice.toString());
-                showToast('Цена покупки обновлена', 'success');
-                bsModal.hide();
-            } else {
-                showToast('Ошибка при обновлении: ' + (data.error || ''), 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('Ошибка при обновлении', 'error');
-        })
-        .finally(() => {
-            confirmBtn.disabled = false;
-            confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Добавить';
-        });
+        updateItemField(itemId, 'purchase_price', currentPrice + addAmount)
+            .then(data => {
+                if (data.success) {
+                    updateCellDisplay(cell, row, 'purchase_price', data, (currentPrice + addAmount).toString());
+                    showToast('Цена покупки обновлена', 'success');
+                    bsModal.hide();
+                } else {
+                    showToast('Ошибка: ' + (data.error || ''), 'error');
+                }
+            })
+            .catch(() => showToast('Ошибка при обновлении', 'error'))
+            .finally(() => {
+                confirmBtn.disabled = false;
+                confirmBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Добавить';
+            });
     };
 
     confirmBtn.removeEventListener('click', handleConfirm);

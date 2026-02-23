@@ -12,6 +12,12 @@ class Item(models.Model):
         verbose_name = "Предмет"
         verbose_name_plural = "Предметы"
         ordering = ['-purchase_date']
+        indexes = [
+            models.Index(fields=['purchase_date']),
+            models.Index(fields=['sale_date']),
+            models.Index(fields=['name']),
+            models.Index(fields=['purchase_date', 'sale_date']),
+        ]
 
     def __str__(self):
         return self.name
@@ -34,6 +40,9 @@ class Expense(models.Model):
         verbose_name = "Накладные расходы"
         verbose_name_plural = "Накладные расходы"
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['date']),
+        ]
 
     def __str__(self):
         return f"{self.date} - {self.amount}"

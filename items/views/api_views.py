@@ -3,8 +3,8 @@ API views для предметов (AJAX запросы).
 """
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
+from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
 from items.models import Item
 from items.forms import ItemForm
 from items.services import ItemService
@@ -21,38 +21,38 @@ def add_item(request):
             item.purchase_date = timezone.now().date()
         item.save()
 
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return JsonResponse({
-                'success': True,
-                'item': {
-                    'id': item.id,
-                    'name': item.name,
-                    'purchase_price': item.purchase_price,
-                    'sale_price': item.sale_price,
-                    'purchase_date': item.purchase_date.isoformat() if item.purchase_date else None,
-                    'sale_date': item.sale_date.isoformat() if item.sale_date else None,
-                }
-            })
+        return JsonResponse({
+            'success': True,
+            'item': {
+                'id': item.id,
+                'name': item.name,
+                'purchase_price': item.purchase_price,
+                'sale_price': item.sale_price,
+                'purchase_date': item.purchase_date.isoformat() if item.purchase_date else None,
+                'sale_date': item.sale_date.isoformat() if item.sale_date else None,
+            }
+        })
 
-    errors = form.errors.get_json_data() if hasattr(form.errors, 'get_json_data') else form.errors
-    return JsonResponse({'error': 'Invalid form data', 'errors': errors}, status=400)
+    return JsonResponse(
+        {'error': 'Invalid form data', 'errors': form.errors.get_json_data()},
+        status=400
+    )
 
 
 @require_POST
 def update_item(request, pk):
     """API для обновления предмета (AJAX)."""
     item = get_object_or_404(Item, pk=pk)
-    
     field = request.POST.get('field')
     value = request.POST.get('value')
 
     success, error = ItemService.update_item(item, field, value)
-    
+
     if not success:
         return JsonResponse({'error': error}, status=400)
 
     response_data = {'success': True, 'value': str(value)}
-    
+
     if field in ['purchase_price', 'sale_price']:
         response_data['profit'] = str(item.profit) if item.profit is not None else ''
         response_data['is_negative'] = item.profit < 0 if item.profit is not None else False
@@ -69,5 +69,4 @@ def delete_item(request, pk):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'success': True})
 
-    from django.shortcuts import redirect
     return redirect('items:item_list')

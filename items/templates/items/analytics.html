@@ -1,7 +1,13 @@
 {% extends 'items/base.html' %}
+{% load static %}
 {% load item_tags %}
+{% load l10n %}
 
 {% block title %}Аналитика прибыли{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
+{% endblock %}
 
 {% block content %}
 <!-- Заголовок и навигация -->
@@ -28,49 +34,40 @@
     </div>
     <div class="card-body">
         <form method="get" class="row g-3 align-items-end" id="analyticsFilterForm">
-            <!-- Скрытые поля для сохранения параметров фильтра -->
-            <input type="hidden" name="hide_sold" id="hideSold" value="{{ hide_sold }}">
-            <input type="hidden" name="name" id="nameFilter" value="{{ name_filter }}">
-            <input type="hidden" name="sort" id="sortBy" value="{{ sort_by }}">
-            
-            <!-- Быстрые фильтры -->
+            <input type="hidden" name="hide_sold" value="{{ hide_sold }}">
+            <input type="hidden" name="name" value="{{ name_filter }}">
+            <input type="hidden" name="sort" value="{{ sort_by }}">
+
             <div class="col-12 mb-2">
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-outline-primary btn-sm" id="todayBtn">
-                        <i class="bi bi-calendar-day me-1"></i>
-                        Сегодня
+                        <i class="bi bi-calendar-day me-1"></i> Сегодня
                     </button>
                     <button type="button" class="btn btn-outline-primary btn-sm" id="weekBtn">
-                        <i class="bi bi-calendar-week me-1"></i>
-                        Неделя
+                        <i class="bi bi-calendar-week me-1"></i> Неделя
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="showAllBtn">
-                        <i class="bi bi-list-ul me-1"></i>
-                        Всё
+                        <i class="bi bi-list-ul me-1"></i> Всё
                     </button>
                 </div>
             </div>
 
-            <!-- Поля дат и кнопка -->
             <div class="col-md-4">
                 <label class="form-label" for="dateFrom">
-                    <i class="bi bi-calendar-check me-1"></i>
-                    Дата с
+                    <i class="bi bi-calendar-check me-1"></i> Дата с
                 </label>
                 <input type="date" name="date_from" id="dateFrom" class="form-control" value="{{ date_from|date:'Y-m-d' }}" required>
             </div>
             <div class="col-md-4">
                 <label class="form-label" for="dateTo">
-                    <i class="bi bi-calendar-check me-1"></i>
-                    Дата по
+                    <i class="bi bi-calendar-check me-1"></i> Дата по
                 </label>
                 <input type="date" name="date_to" id="dateTo" class="form-control" value="{{ date_to|date:'Y-m-d' }}" required>
             </div>
             <div class="col-md-4">
                 <label class="form-label">&nbsp;</label>
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-check-lg me-1"></i>
-                    Применить фильтр
+                    <i class="bi bi-check-lg me-1"></i> Применить
                 </button>
             </div>
         </form>
@@ -79,58 +76,44 @@
 
 <!-- Сводка по финансам -->
 <div class="row mb-4">
-    <!-- Оборот -->
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="card h-100">
             <div class="card-body">
                 <h6 class="text-white small text-uppercase mb-2">
-                    <i class="bi bi-cash-stack me-1"></i>
-                    Оборот
+                    <i class="bi bi-cash-stack me-1"></i> Оборот
                 </h6>
-                <p class="fs-4 mb-0 text-info">
-                    <strong>{{ turnover|format_price }}</strong>
-                </p>
+                <p class="fs-4 mb-0 text-info"><strong>{{ turnover|format_price }}</strong></p>
             </div>
         </div>
     </div>
 
-    <!-- Накладные расходы -->
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="card h-100">
             <div class="card-body">
                 <h6 class="text-white small text-uppercase mb-2">
-                    <i class="bi bi-receipt me-1"></i>
-                    Накладные расходы
+                    <i class="bi bi-receipt me-1"></i> Накладные расходы
                 </h6>
-                <p class="fs-4 mb-0 text-danger">
-                    <strong>{{ total_expenses|format_price }}</strong>
-                </p>
+                <p class="fs-4 mb-0 text-danger"><strong>{{ total_expenses|format_price }}</strong></p>
             </div>
         </div>
     </div>
-    
-    <!-- Зарезервировано -->
+
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="card h-100">
             <div class="card-body">
                 <h6 class="text-white small text-uppercase mb-2">
-                    <i class="bi bi-piggy-bank me-1"></i>
-                    Зарезервировано
+                    <i class="bi bi-piggy-bank me-1"></i> Зарезервировано
                 </h6>
-                <p class="fs-4 mb-0 text-secondary">
-                    <strong>{{ reserved_amount|format_price }}</strong>
-                </p>
+                <p class="fs-4 mb-0 text-secondary"><strong>{{ reserved_amount|format_price }}</strong></p>
             </div>
         </div>
     </div>
-    
-    <!-- Чистая прибыль -->
+
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="card h-100">
             <div class="card-body">
                 <h6 class="text-white small text-uppercase mb-2">
-                    <i class="bi bi-trophy me-2"></i>
-                    Чистая прибыль
+                    <i class="bi bi-trophy me-2"></i> Чистая прибыль
                 </h6>
                 <p class="fs-4 mb-0 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% else %}text-secondary{% endif %}">
                     <strong>{{ total_profit|format_price }}</strong>
@@ -143,8 +126,7 @@
 <!-- Диаграмма -->
 <div class="card">
     <div class="card-header">
-        <i class="bi bi-bar-chart-fill me-2"></i>
-        Чистая прибыль по дням
+        <i class="bi bi-bar-chart-fill me-2"></i> Чистая прибыль по дням
     </div>
     <div class="card-body">
         {% if labels|length == 0 %}
@@ -159,197 +141,18 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-// Форматирование цены с разделением на разряды и знаком рубля
-function formatPrice(value) {
-    const num = parseInt(value) || 0;
-    return num.toLocaleString('ru-RU') + ' ₽';
-}
-
-// Отправка формы фильтра
-function submitFilterForm() {
-    const form = document.getElementById('analyticsFilterForm');
-    if (form) {
-        form.submit();
-    }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    // Кнопка "Сегодня"
-    const todayBtn = document.getElementById('todayBtn');
-    if (todayBtn) {
-        todayBtn.addEventListener('click', function() {
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('dateFrom').value = today;
-            document.getElementById('dateTo').value = today;
-            submitFilterForm();
-        });
-    }
-
-    // Кнопка "Неделя"
-    const weekBtn = document.getElementById('weekBtn');
-    if (weekBtn) {
-        weekBtn.addEventListener('click', function() {
-            const today = new Date();
-            const lastWeek = new Date(today);
-            lastWeek.setDate(today.getDate() - 7);
-            
-            const dateFrom = lastWeek.toISOString().split('T')[0];
-            const dateTo = today.toISOString().split('T')[0];
-            
-            document.getElementById('dateFrom').value = dateFrom;
-            document.getElementById('dateTo').value = dateTo;
-            submitFilterForm();
-        });
-    }
-
-    // Кнопка "Всё"
-    const showAllBtn = document.getElementById('showAllBtn');
-    if (showAllBtn) {
-        showAllBtn.addEventListener('click', function() {
-            document.getElementById('dateFrom').value = '2020-01-01';
-            document.getElementById('dateTo').value = '2099-12-31';
-            submitFilterForm();
-        });
-    }
-
-    // Инициализация диаграммы
-    const ctx = document.getElementById('profitChart');
-    if (ctx) {
-        const context = ctx.getContext('2d');
-        const chartContainer = document.getElementById('chartContainer');
-
-        const labels = {{ labels|safe }};
-        const data = {{ data|safe }};
-
-        // Динамическая высота контейнера: 35px на элемент, но не меньше 300px и не больше 2000px
-        const barHeight = 35;
-        const minHeight = 300;
-        const maxHeight = 2000;
-        const calculatedHeight = Math.max(minHeight, Math.min(maxHeight, labels.length * barHeight));
-        
-        if (chartContainer) {
-            chartContainer.style.height = calculatedHeight + 'px';
-        }
-
-        // Генерируем цвета для столбцов (зелёный для прибыли, красный для убытка)
-        const backgroundColors = data.map(value => value >= 0 ? 'rgba(40, 167, 69, 0.8)' : 'rgba(220, 53, 69, 0.8)');
-        const borderColors = data.map(value => value >= 0 ? 'rgb(40, 167, 69)' : 'rgb(220, 53, 69)');
-
-        new Chart(context, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Чистая прибыль',
-                    data: data,
-                    backgroundColor: backgroundColors,
-                    borderColor: borderColors,
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    barThickness: 14,
-                    minBarLength: 10,
-                }]
-            },
-            options: {
-                indexAxis: 'y',
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                const date = context.label;
-                                // Форматируем дату из YYYY-MM-DD в DD.MM.YYYY
-                                const [year, month, day] = date.split('-');
-                                const formattedDate = `${day}.${month}.${year}`;
-                                return `Дата: ${formattedDate} | Чистая прибыль: ${formatPrice(context.parsed.x)}`;
-                            }
-                        },
-                        backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                        titleColor: '#f0f0f0',
-                        bodyColor: '#f0f0f0',
-                        borderColor: '#3e3e42',
-                        borderWidth: 1,
-                        padding: 12,
-                        displayColors: true,
-                        cornerRadius: 6
-                    }
-                },
-                onClick: function(evt, elements) {
-                    if (elements.length > 0) {
-                        const index = elements[0].index;
-                        const selectedDate = labels[index];
-                        // Форматируем дату из YYYY-MM-DD в YYYY-MM-DD для URL
-                        const url = "{% url 'items:item_list' %}" +
-                            '?date_from=' + selectedDate +
-                            '&date_to=' + selectedDate +
-                            '&hide_sold=false' +
-                            '&name=' + encodeURIComponent('{{ name_filter|default:"" }}') +
-                            '&sort=' + encodeURIComponent('{{ sort_by|default:"" }}');
-                        window.location.href = url;
-                    }
-                },
-                scales: {
-                    x: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'Чистая прибыль (₽)',
-                            color: '#f0f0f0',
-                            font: {
-                                size: 14,
-                                weight: '600'
-                            }
-                        },
-                        ticks: {
-                            color: '#b0b0b0',
-                            font: {
-                                size: 13
-                            },
-                            callback: function(value) {
-                                return value.toLocaleString('ru-RU') + ' ₽';
-                            }
-                        },
-                        grid: {
-                            color: '#3e3e42',
-                            lineWidth: 1
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Дата',
-                            color: '#f0f0f0',
-                            font: {
-                                size: 14,
-                                weight: '600'
-                            }
-                        },
-                        ticks: {
-                            color: '#b0b0b0',
-                            font: {
-                                size: 13
-                            }
-                        },
-                        grid: {
-                            color: '#3e3e42',
-                            lineWidth: 1
-                        }
-                    }
-                },
-                animation: {
-                    duration: 500,
-                    easing: 'easeOutQuart'
-                }
-            }
-        });
-    }
-});
+    window.chartData = {
+        labels: {{ labels|safe }},
+        data: {{ data|safe }},
+        nameFilter: '{{ name_filter|default:'' }}',
+        sortBy: '{{ sort_by|default:'-purchase_date' }}'
+    };
+    console.log('Chart data loaded:', window.chartData.labels.length, 'labels');
 </script>
+<script src="{% static 'items/js/analytics.js' %}?v=3"></script>
 {% endblock %}

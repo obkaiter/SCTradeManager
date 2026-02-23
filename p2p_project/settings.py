@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 import json
 from pathlib import Path
 
@@ -18,21 +19,25 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Load configuration from config.json
 CONFIG_FILE = BASE_DIR / "config.json"
-with open(CONFIG_FILE, "r") as f:
-    CONFIG = json.load(f)
-
-
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
+try:
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        CONFIG = json.load(f)
+except (FileNotFoundError, json.JSONDecodeError):
+    CONFIG = {"database": {"path": str(BASE_DIR / "db.sqlite3")}}
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-b=xd)btcn=)(%z@8j-jj)3rw1tr$2&c&vb)=%4)hb*k%%)qz$h'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-b=xd)btcn=)(%z@8j-jj)3rw1tr$2&c&vb)=%4)hb*k%%)qz$h'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = os.environ.get(
+    'DJANGO_ALLOWED_HOSTS',
+    '127.0.0.1,localhost'
+).split(',')
 
 # Application definition
 
@@ -122,3 +127,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+# Media files
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Default primary key field type
+# https://docs.djangoproject.com/en/6.0/ref/settings/#default-auto-field
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
