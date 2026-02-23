@@ -14,6 +14,8 @@ class ItemService:
     def get_items_filtered(date_from=None, date_to=None, hide_sold=False, name_filter=''):
         """
         Получить отфильтрованный список предметов.
+        Фильтрация: предмет попадает в выборку, если дата покупки ИЛИ дата продажи
+        находится в указанном диапазоне.
 
         Args:
             date_from: Дата начала периода
@@ -26,10 +28,22 @@ class ItemService:
         """
         items = Item.objects.all()
 
-        if date_from:
-            items = items.filter(purchase_date__gte=date_from)
-        if date_to:
-            items = items.filter(purchase_date__lte=date_to)
+        # Фильтрация по диапазону дат (покупка ИЛИ продажа)
+        if date_from and date_to:
+            items = items.filter(
+                Q(purchase_date__gte=date_from) | Q(sale_date__gte=date_from)
+            ).filter(
+                Q(purchase_date__lte=date_to) | Q(sale_date__lte=date_to)
+            )
+        elif date_from:
+            items = items.filter(
+                Q(purchase_date__gte=date_from) | Q(sale_date__gte=date_from)
+            )
+        elif date_to:
+            items = items.filter(
+                Q(purchase_date__lte=date_to) | Q(sale_date__lte=date_to)
+            )
+
         if hide_sold:
             items = items.filter(sale_price__isnull=True)
         if name_filter:
@@ -83,20 +97,18 @@ class ItemService:
     @staticmethod
     def calculate_reserved_amount(items):
         """
-        Рассчитать сумму зарезервированных предметов (без даты продажи).
+        Рассчитать сумму зарезервированных предметов.
         Считается по цене закупа. Возвращает абсолютное значение (неотрицательное).
 
         Args:
-            items: Список предметов
+            items: QuerySet предметов (должен быть отфильтрован по sale_date__isnull=True)
 
         Returns:
             Зарезервированная сумма (неотрицательное число)
         """
-        reserved = sum(
-            item.purchase_price for item in items
-            if item.sale_date is None
-        )
-        return abs(reserved)
+        from django.db.models import Sum
+        result = items.aggregate(total=Sum('purchase_price'))['total']
+        return abs(result) if result else 0
 
     @staticmethod
     def update_item(item, field, value):

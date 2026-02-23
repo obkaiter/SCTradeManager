@@ -79,21 +79,21 @@
 
 <!-- Сводка по финансам -->
 <div class="row mb-4">
-    <!-- Валовая прибыль -->
+    <!-- Оборот -->
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="card h-100">
             <div class="card-body">
                 <h6 class="text-white small text-uppercase mb-2">
-                    <i class="bi bi-currency-dollar me-1"></i>
-                    Валовая прибыль
+                    <i class="bi bi-cash-stack me-1"></i>
+                    Оборот
                 </h6>
-                <p class="fs-4 mb-0 text-success">
-                    <strong>{{ gross_profit|format_price }}</strong>
+                <p class="fs-4 mb-0 text-info">
+                    <strong>{{ turnover|format_price }}</strong>
                 </p>
             </div>
         </div>
     </div>
-    
+
     <!-- Накладные расходы -->
     <div class="col-md-6 col-lg-3 mb-3">
         <div class="card h-100">
@@ -144,7 +144,7 @@
 <div class="card">
     <div class="card-header">
         <i class="bi bi-bar-chart-fill me-2"></i>
-        Прибыль по дням
+        Чистая прибыль по дням
     </div>
     <div class="card-body">
         {% if labels|length == 0 %}
@@ -243,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Прибыль',
+                    label: 'Чистая прибыль',
                     data: data,
                     backgroundColor: backgroundColors,
                     borderColor: borderColors,
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 // Форматируем дату из YYYY-MM-DD в DD.MM.YYYY
                                 const [year, month, day] = date.split('-');
                                 const formattedDate = `${day}.${month}.${year}`;
-                                return `Дата: ${formattedDate} | Прибыль: ${formatPrice(context.parsed.x)}`;
+                                return `Дата: ${formattedDate} | Чистая прибыль: ${formatPrice(context.parsed.x)}`;
                             }
                         },
                         backgroundColor: 'rgba(30, 30, 30, 0.95)',
@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         beginAtZero: true,
                         title: {
                             display: true,
-                            text: 'Прибыль (₽)',
+                            text: 'Чистая прибыль (₽)',
                             color: '#f0f0f0',
                             font: {
                                 size: 14,

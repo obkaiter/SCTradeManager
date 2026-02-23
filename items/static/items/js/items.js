@@ -201,10 +201,11 @@ function saveCellValue(cell) {
         const saleDateDisplay = saleDateCell?.querySelector('.display-value');
         const saleDateInput = saleDateCell?.querySelector('.edit-input');
 
-        if (saleDateDisplay && (!saleDateDisplay.textContent || saleDateDisplay.textContent.trim() === '')) {
+        if (saleDateDisplay && (!saleDateDisplay.textContent || saleDateDisplay.textContent.trim() === '' || saleDateDisplay.textContent.trim() === '—')) {
             const today = new Date().toISOString().split('T')[0];
             const formatted = formatDate(new Date());
 
+            // Сначала обновляем дату продажи, затем цену продажи
             fetch(`/items/${itemId}/update/`, {
                 method: 'POST',
                 headers: {
@@ -218,6 +219,7 @@ function saveCellValue(cell) {
                 if (dateData.success && saleDateDisplay && saleDateInput) {
                     saleDateDisplay.textContent = formatted;
                     saleDateInput.value = today;
+                    // После обновления даты продажим обновляем цену продажи
                     return fetch(`/items/${itemId}/update/`, {
                         method: 'POST',
                         headers: {
@@ -227,12 +229,83 @@ function saveCellValue(cell) {
                         body: `field=${field}&value=${encodeURIComponent(newValue)}`
                     });
                 }
+                // Если дата не была обновлена, всё равно обновляем цену
+                return fetch(`/items/${itemId}/update/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `field=${field}&value=${encodeURIComponent(newValue)}`
+                });
             })
             .then(response => response.json())
             .then(data => {
                 if (data && data.success) {
                     updateCellDisplay(cell, row, field, data, newValue);
                     showToast('Цена продажи обновлена', 'success', 1500);
+                    // Перезагружаем страницу для обновления сводки
+                    setTimeout(() => {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        window.location.href = '?' + urlParams.toString();
+                    }, 600);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Ошибка при сохранении', 'error');
+            })
+            .finally(() => {
+                editInput.style.display = 'none';
+                displayValue.style.display = 'inline';
+            });
+
+            return;
+        }
+    }
+
+    // Если очищаем цену продажи — также очищаем дату продажи
+    if (field === 'sale_price' && newValue === '') {
+        const saleDateCell = row.querySelector('[data-field="sale_date"]');
+        const saleDateDisplay = saleDateCell?.querySelector('.display-value');
+        const saleDateInput = saleDateCell?.querySelector('.edit-input');
+
+        if (saleDateDisplay && saleDateDisplay.textContent && saleDateDisplay.textContent.trim() !== '' && saleDateDisplay.textContent.trim() !== '—') {
+            // Очищаем дату продажи
+            fetch(`/items/${itemId}/update/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: `field=sale_date&value=`
+            })
+            .then(response => response.json())
+            .then(dateData => {
+                if (dateData.success && saleDateDisplay && saleDateInput) {
+                    saleDateDisplay.textContent = '—';
+                    saleDateInput.value = '';
+                }
+                // Затем обновляем цену продажи
+                return fetch(`/items/${itemId}/update/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: `field=${field}&value=`
+                });
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.success) {
+                    updateCellDisplay(cell, row, field, data, newValue);
+                    showToast('Цена продажи и дата продажи очищены', 'success', 1500);
+                    // Перезагружаем страницу для обновления сводки
+                    setTimeout(() => {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        window.location.href = '?' + urlParams.toString();
+                    }, 600);
                 }
             })
             .catch(error => {
@@ -262,6 +335,11 @@ function saveCellValue(cell) {
         if (data.success) {
             updateCellDisplay(cell, row, field, data, newValue);
             showToast('Изменения сохранены', 'success', 1500);
+            // Перезагружаем страницу для обновления сводки
+            setTimeout(() => {
+                const urlParams = new URLSearchParams(window.location.search);
+                window.location.href = '?' + urlParams.toString();
+            }, 600);
         } else {
             showToast('Ошибка при сохранении: ' + (data.error || ''), 'error');
         }
@@ -343,22 +421,25 @@ function updateProfitCell(row, field, numValue, data, newValue) {
         return;
     }
 
-    // Товар не продан (sale_price пустой)
+    // Товар не продан (sale_price пустой) - прибыль = -purchase_price
     if (field === 'sale_price' && newValue === '') {
-        profitCell.textContent = '-' + formatPrice(numValue);
-        profitCell.classList.remove('negative-profit', 'positive-profit');
+        const purchasePriceCell = row.querySelector('[data-field="purchase_price"]');
+        const purchasePriceText = purchasePriceCell?.querySelector('.display-value')?.textContent || '0';
+        const purchasePrice = parseInt(parsePrice(purchasePriceText)) || 0;
+        profitCell.textContent = '-' + formatPrice(purchasePrice);
+        profitCell.classList.remove('negative-profit', 'positive-profit', 'zero-profit');
         profitCell.classList.add('no-sale-profit');
         return;
     }
 
-    // Изменение цены покупки
+    // Изменение цены покупки - если товар не продан
     if (field === 'purchase_price') {
         const salePriceCell = row.querySelector('[data-field="sale_price"]');
         const salePriceText = salePriceCell?.querySelector('.display-value')?.textContent || '';
         const salePrice = parseInt(parsePrice(salePriceText)) || null;
 
         if (salePrice === null || salePriceText === '') {
-            // Товар не продан
+            // Товар не продан - прибыль = -purchase_price
             profitCell.textContent = '-' + formatPrice(numValue);
             profitCell.classList.remove('negative-profit', 'positive-profit', 'zero-profit');
             profitCell.classList.add('no-sale-profit');
