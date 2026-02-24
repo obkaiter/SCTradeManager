@@ -11,6 +11,13 @@ let contextMenuCell = null;
 let contextMenu = null;
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Восстанавливаем позицию скролла мгновенно
+    const scrollPosition = sessionStorage.getItem('scrollPosition');
+    if (scrollPosition) {
+        window.scrollTo({ top: parseInt(scrollPosition), behavior: 'instant' });
+        sessionStorage.removeItem('scrollPosition');
+    }
+    
     initContextMenuGlobal();
     initCopyOnClick();
 });
@@ -346,9 +353,13 @@ function handleUpdateError(editInput, displayValue) {
 }
 
 /**
- * Перезагрузка страницы с сохранением параметров
+ * Перезагрузка страницы с сохранением параметров и позиции скролла
  */
 function reloadPageWithParams() {
+    // Сохраняем позицию скролла в sessionStorage
+    const scrollPosition = window.scrollY;
+    sessionStorage.setItem('scrollPosition', scrollPosition.toString());
+    
     setTimeout(() => {
         const urlParams = new URLSearchParams(window.location.search);
         window.location.href = '?' + urlParams.toString();

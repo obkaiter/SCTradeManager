@@ -555,7 +555,8 @@ h6 { font-size: 14px; }
 .toast-container {
     position: fixed;
     top: 20px;
-    right: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 1050;
 }
 .toast {
@@ -564,17 +565,17 @@ h6 { font-size: 14px; }
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-card);
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateY(-100%);
     transition: opacity 0.3s ease, transform 0.3s ease;
     display: block !important;
 }
 .toast.hiding {
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateY(-100%);
 }
 .toast.show {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
 }
 .toast-header {
     background: var(--gradient-header);
