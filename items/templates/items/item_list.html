@@ -96,6 +96,11 @@
                     Покупка
                     <span class="sort-icon">{% if sort_by == 'purchase_price' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-purchase_price' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
+                <th class="sortable text-center" data-sort="quantity" style="width: 100px;">
+                    <i class="bi bi-hash me-1"></i>
+                    Кол-во
+                    <span class="sort-icon">{% if sort_by == 'quantity' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-quantity' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
+                </th>
                 <th class="sortable text-right" data-sort="sale_price" style="width: 120px;">
                     <i class="bi bi-currency-dollar me-1"></i>
                     Продажа
@@ -133,6 +138,10 @@
                     <span class="display-value">{{ item.purchase_price|format_price }}</span>
                     <input type="text" class="edit-input" value="{{ item.purchase_price }}" style="display:none;">
                 </td>
+                <td class="editable-cell text-center" data-field="quantity">
+                    <span class="display-value">{{ item.quantity }}</span>
+                    <input type="number" class="edit-input" value="{{ item.quantity }}" min="1" style="display:none;">
+                </td>
                 <td class="editable-cell price-cell" data-field="sale_price">
                     <span class="display-value">{{ item.sale_price|format_price }}</span>
                     <input type="text" class="edit-input" value="{{ item.sale_price|default:'' }}" style="display:none;">
@@ -156,7 +165,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" class="text-center py-5">
+                <td colspan="9" class="text-center py-5">
                     <i class="bi bi-inbox display-4 d-block mb-3" style="color: var(--text-secondary);"></i>
                     <span style="color: var(--text-primary);">Нет предметов в базе данных</span>
                 </td>
@@ -210,6 +219,12 @@
                             <i class="bi bi-calendar-x me-1"></i>Дата продажи
                         </label>
                         <input type="date" name="sale_date" id="addItemSaleDate" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="addItemQuantity">
+                            <i class="bi bi-hash me-1"></i>Количество
+                        </label>
+                        <input type="number" name="quantity" id="addItemQuantity" class="form-control" placeholder="1" min="1" value="1">
                     </div>
                 </div>
                 <div class="modal-footer">

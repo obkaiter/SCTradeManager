@@ -7,6 +7,7 @@ class Item(models.Model):
     sale_price = models.IntegerField("Цена продажи", null=True, blank=True)
     purchase_date = models.DateField("Дата покупки")
     sale_date = models.DateField("Дата продажи", null=True, blank=True)
+    quantity = models.PositiveIntegerField("Количество", default=1)
 
     class Meta:
         verbose_name = "Предмет"
@@ -25,7 +26,7 @@ class Item(models.Model):
     @property
     def profit(self):
         if self.sale_price is not None:
-            return self.sale_price - self.purchase_price
+            return (self.sale_price - self.purchase_price) * self.quantity
         return None
 
     def is_sold(self):

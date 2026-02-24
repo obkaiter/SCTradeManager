@@ -79,7 +79,7 @@ class ItemService:
         Обновить поле предмета.
         Returns: tuple (success: bool, error: str|None)
         """
-        valid_fields = ['name', 'purchase_price', 'sale_price', 'purchase_date', 'sale_date']
+        valid_fields = ['name', 'purchase_price', 'sale_price', 'purchase_date', 'sale_date', 'quantity']
 
         if field not in valid_fields:
             return False, 'Invalid field'
@@ -87,7 +87,7 @@ class ItemService:
         try:
             if value == '' and field in ['sale_price', 'sale_date']:
                 setattr(item, field, None)
-            elif field in ['purchase_price', 'sale_price']:
+            elif field in ['purchase_price', 'sale_price', 'quantity']:
                 setattr(item, field, int(value) if value else None)
             else:
                 setattr(item, field, value)

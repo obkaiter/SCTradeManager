@@ -19,6 +19,8 @@ def add_item(request):
         item = form.save(commit=False)
         if not item.purchase_date:
             item.purchase_date = timezone.now().date()
+        if not item.quantity:
+            item.quantity = 1
         item.save()
 
         return JsonResponse({
@@ -30,6 +32,7 @@ def add_item(request):
                 'sale_price': item.sale_price,
                 'purchase_date': item.purchase_date.isoformat() if item.purchase_date else None,
                 'sale_date': item.sale_date.isoformat() if item.sale_date else None,
+                'quantity': item.quantity,
             }
         })
 
@@ -53,7 +56,7 @@ def update_item(request, pk):
 
     response_data = {'success': True, 'value': str(value)}
 
-    if field in ['purchase_price', 'sale_price']:
+    if field in ['purchase_price', 'sale_price', 'quantity']:
         response_data['profit'] = str(item.profit) if item.profit is not None else ''
         response_data['is_negative'] = item.profit < 0 if item.profit is not None else False
 

@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initPriceFields(['addExpenseAmount', 'editExpenseAmount']);
     initPriceFields(['addItemPurchasePrice', 'addItemSalePrice']);
     initPriceFields(['addPriceAmount']);
+    // Поле количества не требует форматирования цены
 
     // Сортировка по клику на заголовок
     document.querySelectorAll('.sortable').forEach(th => {

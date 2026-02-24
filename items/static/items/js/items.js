@@ -375,6 +375,11 @@ function updateCellDisplay(cell, row, field, data, newValue) {
             displayValue.textContent = '—';
             if (editInput) editInput.value = '';
         }
+    } else if (field === 'quantity') {
+        const numValue = parseInt(data.value) || 1;
+        displayValue.textContent = numValue;
+        if (editInput) editInput.value = numValue;
+        updateProfitForQuantity(row, numValue);
     } else {
         displayValue.textContent = data.value || '';
         if (editInput) editInput.value = data.value || '';
@@ -424,6 +429,33 @@ function updateProfitCell(row, field, numValue, data, newValue) {
             profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit', 'zero-profit');
             profitCell.classList.add(profit < 0 ? 'negative-profit' : profit > 0 ? 'positive-profit' : 'zero-profit');
         }
+    }
+}
+
+/**
+ * Обновление прибыли при изменении количества
+ */
+function updateProfitForQuantity(row, quantity) {
+    const profitCell = row.querySelector('.profit-cell');
+    const purchasePriceCell = row.querySelector('[data-field="purchase_price"]');
+    const salePriceCell = row.querySelector('[data-field="sale_price"]');
+    
+    if (!profitCell || !purchasePriceCell || !salePriceCell) return;
+    
+    const purchasePrice = parseInt(parsePrice(purchasePriceCell.querySelector('.display-value')?.textContent || '0')) || 0;
+    const salePriceText = salePriceCell.querySelector('.display-value')?.textContent || '';
+    const salePrice = salePriceText ? parseInt(parsePrice(salePriceText)) : null;
+    
+    if (salePrice === null) {
+        // Товар не продан
+        profitCell.textContent = '-' + formatPrice(purchasePrice * quantity);
+        profitCell.classList.remove('negative-profit', 'positive-profit', 'zero-profit');
+        profitCell.classList.add('no-sale-profit');
+    } else {
+        const profit = (salePrice - purchasePrice) * quantity;
+        profitCell.textContent = profit.toLocaleString('ru-RU') + ' ₽';
+        profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit', 'zero-profit');
+        profitCell.classList.add(profit < 0 ? 'negative-profit' : profit > 0 ? 'positive-profit' : 'zero-profit');
     }
 }
 
