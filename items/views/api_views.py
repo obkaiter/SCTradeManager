@@ -88,6 +88,7 @@ def flesh_prices(request):
                 'slastena': prices.slastena,
                 'kubarbuz': prices.kubarbuz,
                 'limonnik': prices.limonnik,
+                'comment': prices.comment,
             }
         })
 
@@ -98,6 +99,7 @@ def flesh_prices(request):
             prices.slastena = int(request.POST.get('slastena', 0))
             prices.kubarbuz = int(request.POST.get('kubarbuz', 0))
             prices.limonnik = int(request.POST.get('limonnik', 0))
+            prices.comment = request.POST.get('comment', '')
             prices.save()
 
             return JsonResponse({
@@ -107,6 +109,7 @@ def flesh_prices(request):
                     'slastena': prices.slastena,
                     'kubarbuz': prices.kubarbuz,
                     'limonnik': prices.limonnik,
+                    'comment': prices.comment,
                 }
             })
         except (ValueError, TypeError) as e:
@@ -158,13 +161,32 @@ def add_flesh_items(request):
             price_per_unit = price_map[data['price_key']]
             total_purchase_price = qty * price_per_unit
 
-            # Ищем предмет с таким названием за сегодня
+            # Ищем предмет с таким названием за сегодня без продажи
+            # Сначала ищем запись без sale_price и sale_date (которую можно обновлять)
             existing_item = Item.objects.filter(
                 name=name,
-                purchase_date=today
+                purchase_date=today,
+                sale_price__isnull=True,
+                sale_date__isnull=True
             ).first()
+            
+            # Если не нашли, ищем любую запись за сегодня (для создания новой)
+            if not existing_item:
+                existing_item = Item.objects.filter(
+                    name=name,
+                    purchase_date=today
+                ).first()
 
+            # Проверяем, нужно ли создавать новую запись
+            create_new = False
             if existing_item:
+                # Если есть цена продажи или дата продажи — создаём новую запись
+                has_sale_price = existing_item.sale_price is not None and existing_item.sale_price != 0
+                has_sale_date = existing_item.sale_date is not None
+                if has_sale_price or has_sale_date:
+                    create_new = True
+
+            if existing_item and not create_new:
                 # Обновляем существующий
                 existing_item.quantity += qty
                 existing_item.purchase_price += total_purchase_price

@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 
 
 class Item(models.Model):
@@ -56,6 +57,7 @@ class FleshPrice(models.Model):
     slastena = models.IntegerField("Мякоть сластены", default=0)
     kubarbuz = models.IntegerField("Мякоть куборбуза", default=0)
     limonnik = models.IntegerField("Мякоть лимонника", default=0)
+    comment = models.TextField("Комментарий", blank=True, default="")
 
     class Meta:
         verbose_name = "Цены закупки мякоти"

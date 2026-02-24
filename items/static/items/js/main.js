@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initPriceFields(['addExpenseAmount', 'editExpenseAmount']);
     initPriceFields(['addItemPurchasePrice', 'addItemSalePrice']);
     initPriceFields(['addPriceAmount']);
+    initPriceFields(['fleshSolovikPrice', 'fleshSlastenaPrice', 'fleshKubarbuzPrice', 'fleshLimonnikPrice']);
     // Поле количества не требует форматирования цены
 
     // Сортировка по клику на заголовок

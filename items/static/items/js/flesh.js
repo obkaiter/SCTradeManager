@@ -58,11 +58,13 @@ function loadFleshPrices() {
                 const slastenaPriceInput = document.getElementById('fleshSlastenaPrice');
                 const kubarbuzPriceInput = document.getElementById('fleshKubarbuzPrice');
                 const limonnikPriceInput = document.getElementById('fleshLimonnikPrice');
+                const commentInput = document.getElementById('fleshComment');
 
                 if (solovikPriceInput) solovikPriceInput.value = formatPrice(fleshPrices.solovik);
                 if (slastenaPriceInput) slastenaPriceInput.value = formatPrice(fleshPrices.slastena);
                 if (kubarbuzPriceInput) kubarbuzPriceInput.value = formatPrice(fleshPrices.kubarbuz);
                 if (limonnikPriceInput) limonnikPriceInput.value = formatPrice(fleshPrices.limonnik);
+                if (commentInput) commentInput.value = fleshPrices.comment || '';
 
                 // Пересчитываем сумму
                 updateFleshTotalSum();
@@ -80,7 +82,7 @@ function loadFleshPrices() {
 function resetFleshQuantities() {
     const qtyFields = document.querySelectorAll('.flesh-qty');
     qtyFields.forEach(field => {
-        field.value = 0;
+        field.value = '';
     });
 }
 
@@ -133,12 +135,14 @@ function initFleshPricesForm() {
         const slastenaPriceInput = document.getElementById('fleshSlastenaPrice');
         const kubarbuzPriceInput = document.getElementById('fleshKubarbuzPrice');
         const limonnikPriceInput = document.getElementById('fleshLimonnikPrice');
+        const commentInput = document.getElementById('fleshComment');
 
         const postData = new URLSearchParams();
         postData.append('solovik', parsePrice(solovikPriceInput?.value || 0));
         postData.append('slastena', parsePrice(slastenaPriceInput?.value || 0));
         postData.append('kubarbuz', parsePrice(kubarbuzPriceInput?.value || 0));
         postData.append('limonnik', parsePrice(limonnikPriceInput?.value || 0));
+        postData.append('comment', commentInput?.value || '');
 
         fetch('/items/flesh/prices/', {
             method: 'POST',
@@ -223,32 +227,6 @@ function addFleshItems() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Копируем сумму в буфер обмена
-            const fleshTotalSumElement = document.getElementById('fleshTotalSum');
-            if (fleshTotalSumElement) {
-                const sumText = fleshTotalSumElement.textContent.trim();
-                const numericValue = sumText.replace(/[^\d]/g, '');
-                if (numericValue) {
-                    navigator.clipboard.writeText(numericValue).then(() => {
-                        showToast(`Сумма ${sumText} скопирована в буфер обмена`, 'success', 2000);
-                    }).catch(() => {
-                        const textArea = document.createElement('textarea');
-                        textArea.value = numericValue;
-                        textArea.style.position = 'fixed';
-                        textArea.style.left = '-999999px';
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        try {
-                            document.execCommand('copy');
-                            showToast(`Сумма ${sumText} скопирована в буфер обмена`, 'success', 2000);
-                        } catch (err) {
-                            // Не показываем ошибку, если копирование не удалось
-                        }
-                        document.body.removeChild(textArea);
-                    });
-                }
-            }
-
             const fleshModal = bootstrap.Modal.getInstance(document.getElementById('fleshModal'));
             if (fleshModal) fleshModal.hide();
 
