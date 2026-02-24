@@ -2,7 +2,7 @@
 Модуль views для приложения items.
 """
 from .items_views import item_list, analytics
-from .api_views import add_item, update_item, delete_item
+from .api_views import add_item, update_item, delete_item, flesh_prices, add_flesh_items
 from .expenses_views import (
     expense_list,
     expense_create,
@@ -16,6 +16,8 @@ __all__ = [
     'add_item',
     'update_item',
     'delete_item',
+    'flesh_prices',
+    'add_flesh_items',
     'expense_list',
     'expense_create',
     'expense_update',

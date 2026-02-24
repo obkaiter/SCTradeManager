@@ -5,7 +5,8 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
-from items.models import Item
+from django.db.models import Q
+from items.models import Item, FleshPrice
 from items.forms import ItemForm
 from items.services import ItemService
 
@@ -73,3 +74,126 @@ def delete_item(request, pk):
         return JsonResponse({'success': True})
 
     return redirect('items:item_list')
+
+
+@require_http_methods(["GET", "POST"])
+def flesh_prices(request):
+    """Получение или сохранение цен закупки мякоти."""
+    if request.method == "GET":
+        prices = FleshPrice.get_prices()
+        return JsonResponse({
+            'success': True,
+            'prices': {
+                'solovik': prices.solovik,
+                'slastena': prices.slastena,
+                'kubarbuz': prices.kubarbuz,
+                'limonnik': prices.limonnik,
+            }
+        })
+
+    elif request.method == "POST":
+        try:
+            prices = FleshPrice.get_prices()
+            prices.solovik = int(request.POST.get('solovik', 0))
+            prices.slastena = int(request.POST.get('slastena', 0))
+            prices.kubarbuz = int(request.POST.get('kubarbuz', 0))
+            prices.limonnik = int(request.POST.get('limonnik', 0))
+            prices.save()
+
+            return JsonResponse({
+                'success': True,
+                'prices': {
+                    'solovik': prices.solovik,
+                    'slastena': prices.slastena,
+                    'kubarbuz': prices.kubarbuz,
+                    'limonnik': prices.limonnik,
+                }
+            })
+        except (ValueError, TypeError) as e:
+            return JsonResponse({'error': str(e)}, status=400)
+
+
+@require_POST
+def add_flesh_items(request):
+    """Добавление предметов мякоти."""
+    try:
+        today = timezone.now().date()
+
+        # Данные из запроса
+        flesh_data = {
+            'Мякоть солевика': {
+                'qty': int(request.POST.get('solovik_qty', 0)),
+                'price_key': 'solovik'
+            },
+            'Мякоть сластены': {
+                'qty': int(request.POST.get('slastena_qty', 0)),
+                'price_key': 'slastena'
+            },
+            'Мякоть куборбуза': {
+                'qty': int(request.POST.get('kubarbuz_qty', 0)),
+                'price_key': 'kubarbuz'
+            },
+            'Мякоть лимонника': {
+                'qty': int(request.POST.get('limonnik_qty', 0)),
+                'price_key': 'limonnik'
+            },
+        }
+
+        # Получаем цены
+        prices = FleshPrice.get_prices()
+        price_map = {
+            'solovik': prices.solovik,
+            'slastena': prices.slastena,
+            'kubarbuz': prices.kubarbuz,
+            'limonnik': prices.limonnik,
+        }
+
+        results = []
+
+        for name, data in flesh_data.items():
+            qty = data['qty']
+            if qty <= 0:
+                continue
+
+            price_per_unit = price_map[data['price_key']]
+            total_purchase_price = qty * price_per_unit
+
+            # Ищем предмет с таким названием за сегодня
+            existing_item = Item.objects.filter(
+                name=name,
+                purchase_date=today
+            ).first()
+
+            if existing_item:
+                # Обновляем существующий
+                existing_item.quantity += qty
+                existing_item.purchase_price += total_purchase_price
+                existing_item.save()
+                results.append({
+                    'name': name,
+                    'action': 'updated',
+                    'quantity': existing_item.quantity,
+                    'purchase_price': existing_item.purchase_price
+                })
+            else:
+                # Создаём новый
+                new_item = Item.objects.create(
+                    name=name,
+                    purchase_price=total_purchase_price,
+                    purchase_date=today,
+                    quantity=qty
+                )
+                results.append({
+                    'name': name,
+                    'action': 'created',
+                    'quantity': new_item.quantity,
+                    'purchase_price': new_item.purchase_price
+                })
+
+        return JsonResponse({
+            'success': True,
+            'results': results
+        })
+
+    except (ValueError, TypeError) as e:
+        return JsonResponse({'error': str(e)}, status=400)

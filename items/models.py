@@ -25,8 +25,9 @@ class Item(models.Model):
 
     @property
     def profit(self):
+        """Прибыль считается как разница между ценой продажи и покупки (без учёта количества)."""
         if self.sale_price is not None:
-            return (self.sale_price - self.purchase_price) * self.quantity
+            return self.sale_price - self.purchase_price
         return None
 
     def is_sold(self):
@@ -47,3 +48,26 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"{self.date} - {self.amount}"
+
+
+class FleshPrice(models.Model):
+    """Модель для хранения цен закупки мякоти."""
+    solovik = models.IntegerField("Мякоть солевика", default=0)
+    slastena = models.IntegerField("Мякоть сластены", default=0)
+    kubarbuz = models.IntegerField("Мякоть куборбуза", default=0)
+    limonnik = models.IntegerField("Мякоть лимонника", default=0)
+
+    class Meta:
+        verbose_name = "Цены закупки мякоти"
+        verbose_name_plural = "Цены закупки мякоти"
+
+    def __str__(self):
+        return f"Цены мякоти (солевик: {self.solovik}, сластёна: {self.slastena}, кубарбуз: {self.kubarbuz}, лимонник: {self.limonnik})"
+
+    @classmethod
+    def get_prices(cls):
+        """Получить текущие цены или создать запись по умолчанию."""
+        instance = cls.objects.first()
+        if not instance:
+            instance = cls.objects.create()
+        return instance

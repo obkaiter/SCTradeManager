@@ -31,6 +31,10 @@
                 <i class="bi bi-receipt"></i>
                 <span class="d-none d-sm-inline">Расходы</span>
             </button>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#fleshModal" id="openFleshBtn">
+                <i class="bi bi-plus-circle"></i>
+                <span class="d-none d-sm-inline">Мякоть</span>
+            </button>
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
                 <i class="bi bi-plus-lg"></i>
                 <span class="d-none d-sm-inline">Добавить</span>
@@ -197,6 +201,12 @@
                         <input type="text" name="name" id="addItemName" class="form-control" placeholder="Введите название" required autofocus>
                     </div>
                     <div class="mb-3">
+                        <label class="form-label" for="addItemQuantity">
+                            <i class="bi bi-hash me-1"></i>Количество
+                        </label>
+                        <input type="number" name="quantity" id="addItemQuantity" class="form-control" placeholder="1" min="1" value="1">
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label" for="addItemPurchasePrice">
                             <i class="bi bi-cart me-1"></i>Цена покупки
                         </label>
@@ -219,12 +229,6 @@
                             <i class="bi bi-calendar-x me-1"></i>Дата продажи
                         </label>
                         <input type="date" name="sale_date" id="addItemSaleDate" class="form-control">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="addItemQuantity">
-                            <i class="bi bi-hash me-1"></i>Количество
-                        </label>
-                        <input type="number" name="quantity" id="addItemQuantity" class="form-control" placeholder="1" min="1" value="1">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -462,6 +466,108 @@
     </div>
     <div class="context-menu-item" id="ctxMenuAdd">
         <i class="bi bi-plus-lg"></i> Добавить
+    </div>
+</div>
+
+<!-- Модальное окно Мякоть -->
+<div class="modal fade" id="fleshModal" tabindex="-1" aria-labelledby="fleshModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fleshModalLabel">
+                    <i class="bi bi-heart-pulse me-2"></i>Мякоть
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Кнопка цен закупки -->
+                <div class="mb-4">
+                    <button type="button" class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#fleshPricesModal">
+                        <i class="bi bi-tags me-1"></i>Цены закупки
+                    </button>
+                </div>
+
+                <!-- Поля количества -->
+                <h6 class="mb-3">
+                    <i class="bi bi-hash me-1"></i>Количество
+                </h6>
+                <div class="mb-3">
+                    <label class="form-label" for="fleshSolovikQty">Мякоть солевика</label>
+                    <input type="number" class="form-control flesh-qty" id="fleshSolovikQty" placeholder="0" min="0" value="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="fleshSlastenaQty">Мякоть сластены</label>
+                    <input type="number" class="form-control flesh-qty" id="fleshSlastenaQty" placeholder="0" min="0" value="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="fleshKubarbuzQty">Мякоть куборбуза</label>
+                    <input type="number" class="form-control flesh-qty" id="fleshKubarbuzQty" placeholder="0" min="0" value="0">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" for="fleshLimonnikQty">Мякоть лимонника</label>
+                    <input type="number" class="form-control flesh-qty" id="fleshLimonnikQty" placeholder="0" min="0" value="0">
+                </div>
+
+                <!-- Сумма -->
+                <div class="mb-3">
+                    <label class="form-label">Сумма:</label>
+                    <div class="form-control fw-bold" id="fleshTotalSum" style="cursor: pointer;" title="Нажмите для копирования">
+                        0 ₽
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Отмена
+                </button>
+                <button type="button" class="btn btn-success" id="confirmAddFleshBtn">
+                    <i class="bi bi-check-circle me-1"></i>Добавить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно цен закупки мякоти -->
+<div class="modal fade" id="fleshPricesModal" tabindex="-1" aria-labelledby="fleshPricesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="fleshPricesForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="fleshPricesModalLabel">
+                        <i class="bi bi-tags me-2"></i>Цены закупки мякоти
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="fleshSolovikPrice">Мякоть солевика</label>
+                        <input type="text" class="form-control flesh-price" id="fleshSolovikPrice" placeholder="0 ₽">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="fleshSlastenaPrice">Мякоть сластены</label>
+                        <input type="text" class="form-control flesh-price" id="fleshSlastenaPrice" placeholder="0 ₽">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="fleshKubarbuzPrice">Мякоть куборбуза</label>
+                        <input type="text" class="form-control flesh-price" id="fleshKubarbuzPrice" placeholder="0 ₽">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="fleshLimonnikPrice">Мякоть лимонника</label>
+                        <input type="text" class="form-control flesh-price" id="fleshLimonnikPrice" placeholder="0 ₽">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Отмена
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>Сохранить
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}

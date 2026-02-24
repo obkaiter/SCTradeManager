@@ -439,20 +439,21 @@ function updateProfitForQuantity(row, quantity) {
     const profitCell = row.querySelector('.profit-cell');
     const purchasePriceCell = row.querySelector('[data-field="purchase_price"]');
     const salePriceCell = row.querySelector('[data-field="sale_price"]');
-    
+
     if (!profitCell || !purchasePriceCell || !salePriceCell) return;
-    
+
     const purchasePrice = parseInt(parsePrice(purchasePriceCell.querySelector('.display-value')?.textContent || '0')) || 0;
     const salePriceText = salePriceCell.querySelector('.display-value')?.textContent || '';
     const salePrice = salePriceText ? parseInt(parsePrice(salePriceText)) : null;
-    
+
     if (salePrice === null) {
-        // Товар не продан
-        profitCell.textContent = '-' + formatPrice(purchasePrice * quantity);
+        // Товар не продан - показываем минус цену покупки (без учёта количества)
+        profitCell.textContent = '-' + formatPrice(purchasePrice);
         profitCell.classList.remove('negative-profit', 'positive-profit', 'zero-profit');
         profitCell.classList.add('no-sale-profit');
     } else {
-        const profit = (salePrice - purchasePrice) * quantity;
+        // Прибыль считается без учёта количества
+        const profit = salePrice - purchasePrice;
         profitCell.textContent = profit.toLocaleString('ru-RU') + ' ₽';
         profitCell.classList.remove('negative-profit', 'positive-profit', 'no-sale-profit', 'zero-profit');
         profitCell.classList.add(profit < 0 ? 'negative-profit' : profit > 0 ? 'positive-profit' : 'zero-profit');
