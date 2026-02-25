@@ -10,14 +10,14 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <!-- Custom styles -->
-    <link rel="stylesheet" href="{% static 'items/css/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'items/css/styles.css' %}?v=2">
     {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- Toast container -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <div class="container mt-4">
+    <div class="container-fluid px-4">
         {% block content %}{% endblock %}
     </div>
 
