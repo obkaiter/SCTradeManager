@@ -562,36 +562,50 @@ function openAddPriceModal(cell) {
     if (!displayValue) return;
 
     const currentPrice = parseInt(parsePrice(displayValue.textContent)) || 0;
+    const row = cell.closest('tr');
+    const quantityCell = row?.querySelector('[data-field="quantity"]');
+    const quantityDisplay = quantityCell?.querySelector('.display-value');
+    const currentQuantity = quantityDisplay ? parseInt(quantityDisplay.textContent) : 1;
+    
     const modal = document.getElementById('addPurchasePriceModal');
     const currentPriceSpan = document.getElementById('currentPurchasePrice');
     const newPriceSpan = document.getElementById('newPurchasePrice');
+    const newQuantitySpan = document.getElementById('newQuantity');
     const amountInput = document.getElementById('addPriceAmount');
+    const quantityInput = document.getElementById('addQuantityAmount');
     const confirmBtn = document.getElementById('confirmAddPriceBtn');
 
-    if (!modal || !currentPriceSpan || !newPriceSpan || !amountInput || !confirmBtn) return;
+    if (!modal || !currentPriceSpan || !newPriceSpan || !amountInput || !quantityInput || !confirmBtn) return;
 
     currentPriceSpan.textContent = formatPrice(currentPrice);
     amountInput.value = '';
-    newPriceSpan.textContent = '';
+    quantityInput.value = '';
+    newPriceSpan.textContent = formatPrice(currentPrice);
+    newQuantitySpan.textContent = currentQuantity;
 
-    const updateNewPrice = () => {
+    const updateNewValues = () => {
         const addAmount = parseInt(parsePrice(amountInput.value)) || 0;
+        const addQuantity = parseInt(quantityInput.value) || 0;
         newPriceSpan.textContent = formatPrice(currentPrice + addAmount);
+        newQuantitySpan.textContent = currentQuantity + addQuantity;
     };
 
-    amountInput.removeEventListener('input', updateNewPrice);
-    amountInput.addEventListener('input', updateNewPrice);
+    amountInput.removeEventListener('input', updateNewValues);
+    amountInput.addEventListener('input', updateNewValues);
+    quantityInput.removeEventListener('input', updateNewValues);
+    quantityInput.addEventListener('input', updateNewValues);
 
     const bsModal = new bootstrap.Modal(modal);
 
     const handleConfirm = () => {
         const addAmount = parseInt(parsePrice(amountInput.value)) || 0;
-        if (addAmount === 0) {
+        const addQuantity = parseInt(quantityInput.value) || 0;
+
+        if (addAmount === 0 && addQuantity === 0) {
             bsModal.hide();
             return;
         }
 
-        const row = cell.closest('tr');
         const itemId = row?.dataset.itemId;
         if (!itemId) {
             bsModal.hide();
@@ -601,14 +615,35 @@ function openAddPriceModal(cell) {
         confirmBtn.disabled = true;
         confirmBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Сохранение...';
 
-        updateItemField(itemId, 'purchase_price', currentPrice + addAmount)
-            .then(data => {
-                if (data.success) {
-                    updateCellDisplay(cell, row, 'purchase_price', data, (currentPrice + addAmount).toString());
+        // Обновляем цену покупки и количество
+        const newPrice = currentPrice + addAmount;
+        const newQty = currentQuantity + addQuantity;
+
+        // Сначала обновляем цену
+        updateItemField(itemId, 'purchase_price', newPrice)
+            .then(priceData => {
+                if (!priceData.success) {
+                    throw new Error(priceData.error || 'Ошибка при обновлении цены');
+                }
+                // Если количество изменилось, обновляем его
+                if (addQuantity > 0) {
+                    return updateItemField(itemId, 'quantity', newQty).then(qtyData => ({
+                        priceData,
+                        qtyData
+                    }));
+                }
+                return { priceData, qtyData: null };
+            })
+            .then(result => {
+                if (result.priceData.success) {
+                    updateCellDisplay(cell, row, 'purchase_price', { value: newPrice }, newPrice.toString());
+                    if (addQuantity > 0 && quantityCell) {
+                        updateCellDisplay(quantityCell, row, 'quantity', { value: newQty }, newQty.toString());
+                    }
                     showToast('Цена покупки обновлена', 'success');
                     bsModal.hide();
                 } else {
-                    showToast('Ошибка: ' + (data.error || ''), 'error');
+                    showToast('Ошибка: ' + (result.priceData.error || ''), 'error');
                 }
             })
             .catch(() => showToast('Ошибка при обновлении', 'error'))
