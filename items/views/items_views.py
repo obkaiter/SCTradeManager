@@ -57,13 +57,9 @@ def _calculate_financials(date_from, date_to):
     )
     reserved_amount = ItemService.calculate_reserved_amount(reserved_items)
 
-    # Оборот
+    # Оборот (сумма продаж за период)
     sales_total = sold_items.aggregate(total=Sum('sale_price'))['total'] or 0
-    purchases_total = Item.objects.filter(
-        purchase_date__gte=date_from,
-        purchase_date__lte=date_to
-    ).aggregate(total=Sum('purchase_price'))['total'] or 0
-    turnover = sales_total + purchases_total
+    turnover = sales_total
 
     return {
         'total_profit': total_profit,
