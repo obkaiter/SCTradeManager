@@ -22,7 +22,11 @@ function initFilterButtons() {
     const todayBtn = document.getElementById('todayBtn');
     if (todayBtn) {
         todayBtn.addEventListener('click', function() {
-            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const today = `${year}-${month}-${day}`;
             document.getElementById('dateFrom').value = today;
             document.getElementById('dateTo').value = today;
             submitFilterForm();
@@ -37,8 +41,15 @@ function initFilterButtons() {
             const lastWeek = new Date(today);
             lastWeek.setDate(today.getDate() - 7);
 
-            const dateFrom = lastWeek.toISOString().split('T')[0];
-            const dateTo = today.toISOString().split('T')[0];
+            const yearFrom = lastWeek.getFullYear();
+            const monthFrom = String(lastWeek.getMonth() + 1).padStart(2, '0');
+            const dayFrom = String(lastWeek.getDate()).padStart(2, '0');
+            const dateFrom = `${yearFrom}-${monthFrom}-${dayFrom}`;
+
+            const yearTo = today.getFullYear();
+            const monthTo = String(today.getMonth() + 1).padStart(2, '0');
+            const dayTo = String(today.getDate()).padStart(2, '0');
+            const dateTo = `${yearTo}-${monthTo}-${dayTo}`;
 
             document.getElementById('dateFrom').value = dateFrom;
             document.getElementById('dateTo').value = dateTo;
@@ -137,7 +148,6 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
                         '&hide_sold=false' +
                         '&name=' + encodeURIComponent(nameFilter || '') +
                         '&sort=' + encodeURIComponent(sortBy || '-purchase_date');
-                    console.log('Redirecting to:', url);
                     window.location.href = url;
                 }
             },
@@ -203,7 +213,6 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
         initFilterButtons();
 
         if (!window.chartData) {
-            console.error('window.chartData not defined');
             return;
         }
 
@@ -211,8 +220,6 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
         const data = window.chartData.data || [];
         const nameFilter = window.chartData.nameFilter || '';
         const sortBy = window.chartData.sortBy || '-purchase_date';
-
-        console.log('Initializing chart with', labels.length, 'labels');
 
         if (labels.length > 0 && typeof Chart !== 'undefined') {
             initProfitChart(labels, data, nameFilter, sortBy);

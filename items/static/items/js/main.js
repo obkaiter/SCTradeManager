@@ -211,7 +211,11 @@ function setupDateFilterButtons(hideSoldState) {
     const todayBtn = document.getElementById('todayBtn');
     if (todayBtn) {
         todayBtn.addEventListener('click', function() {
-            const today = new Date().toISOString().split('T')[0];
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const today = `${year}-${month}-${day}`;
             const hideSold = hideSoldState?.value || 'false';
             const nameFilter = document.getElementById('filterNameInput')?.value || '';
             let url = '?date_from=' + today + '&date_to=' + today + '&hide_sold=' + hideSold;
@@ -229,8 +233,15 @@ function setupDateFilterButtons(hideSoldState) {
             const lastWeek = new Date(today);
             lastWeek.setDate(today.getDate() - 7);
 
-            const dateFrom = lastWeek.toISOString().split('T')[0];
-            const dateTo = today.toISOString().split('T')[0];
+            const yearFrom = lastWeek.getFullYear();
+            const monthFrom = String(lastWeek.getMonth() + 1).padStart(2, '0');
+            const dayFrom = String(lastWeek.getDate()).padStart(2, '0');
+            const dateFrom = `${yearFrom}-${monthFrom}-${dayFrom}`;
+
+            const yearTo = today.getFullYear();
+            const monthTo = String(today.getMonth() + 1).padStart(2, '0');
+            const dayTo = String(today.getDate()).padStart(2, '0');
+            const dateTo = `${yearTo}-${monthTo}-${dayTo}`;
 
             const hideSold = hideSoldState?.value || 'false';
             const nameFilter = document.getElementById('filterNameInput')?.value || '';
@@ -301,8 +312,17 @@ function initAddItemForm() {
     const addItemModal = document.getElementById('addItemModal');
     if (!addItemModal) return;
 
+    // Функция получения локальной даты
+    function getLocalDate() {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
     addItemModal.addEventListener('show.bs.modal', function() {
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDate();
         const purchaseDateInput = document.getElementById('addItemPurchaseDate');
         if (purchaseDateInput) {
             purchaseDateInput.value = today;
@@ -314,13 +334,13 @@ function initAddItemForm() {
             purchaseDateInput.value = today;
         }
     });
-    
+
     // Закрытие модального окна и очистка при скрытии
     addItemModal.addEventListener('hidden.bs.modal', function() {
         const addItemForm = document.getElementById('addItemForm');
         if (addItemForm) {
             addItemForm.reset();
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDate();
             const purchaseDateInput = document.getElementById('addItemPurchaseDate');
             if (purchaseDateInput) {
                 purchaseDateInput.value = today;
