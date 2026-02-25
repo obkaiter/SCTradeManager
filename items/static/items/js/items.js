@@ -4,20 +4,12 @@
 
 // Константы
 const DELAY_DOUBLE_CLICK = 200;
-const DELAY_PAGE_RELOAD = 600;
 
 // Переменные для контекстного меню
 let contextMenuCell = null;
 let contextMenu = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Восстанавливаем позицию скролла мгновенно
-    const scrollPosition = sessionStorage.getItem('scrollPosition');
-    if (scrollPosition) {
-        window.scrollTo({ top: parseInt(scrollPosition), behavior: 'instant' });
-        sessionStorage.removeItem('scrollPosition');
-    }
-    
     initContextMenuGlobal();
     initCopyOnClick();
 });
@@ -200,8 +192,10 @@ function saveCellValue(cell) {
         .then(data => {
             if (data.success) {
                 updateCellDisplay(cell, row, field, data, newValue);
+                if (data.financials) {
+                    updateFinancialSummary(data.financials);
+                }
                 showToast('Изменения сохранены', 'success', 1500);
-                reloadPageWithParams();
             } else {
                 showToast('Ошибка: ' + (data.error || ''), 'error');
             }
@@ -226,19 +220,37 @@ function updateSalePriceWithDate(itemId, row, cell, field, newValue) {
     if (!saleDateDisplay || saleDateDisplay.textContent.trim() !== '—') {
         // Дата уже установлена, просто обновляем цену
         updateItemField(itemId, field, newValue)
-            .then(handleUpdateResponse(cell, row, field, newValue, 'Цена продажи обновлена'))
-            .catch(handleUpdateError(editInput, displayValue));
+            .then(data => {
+                if (data.success) {
+                    updateCellDisplay(cell, row, field, data, newValue);
+                    if (data.financials) {
+                        updateFinancialSummary(data.financials);
+                    }
+                    showToast('Цена продажи обновлена', 'success', 1500);
+                } else {
+                    showToast('Ошибка: ' + (data.error || ''), 'error');
+                }
+            })
+            .catch(() => showToast('Ошибка при сохранении', 'error'))
+            .finally(() => {
+                editInput.style.display = 'none';
+                displayValue.style.display = 'inline';
+            });
         return;
     }
 
     const today = new Date().toISOString().split('T')[0];
     const formatted = formatDate(new Date());
 
+    const { dateFrom, dateTo } = getDateFilterParams();
+
     fetch(`/items/${itemId}/update/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': getCookie('csrftoken')
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Date-From': dateFrom,
+            'X-Date-To': dateTo
         },
         body: `field=sale_date&value=${encodeURIComponent(today)}`
     })
@@ -253,8 +265,10 @@ function updateSalePriceWithDate(itemId, row, cell, field, newValue) {
     .then(data => {
         if (data && data.success) {
             updateCellDisplay(cell, row, field, data, newValue);
+            if (data.financials) {
+                updateFinancialSummary(data.financials);
+            }
             showToast('Цена продажи обновлена', 'success', 1500);
-            reloadPageWithParams();
         }
     })
     .catch(() => showToast('Ошибка при сохранении', 'error'))
@@ -277,16 +291,34 @@ function clearSalePriceAndDate(itemId, row, cell, newValue) {
     if (!saleDateDisplay || saleDateDisplay.textContent.trim() === '—') {
         // Дата уже пустая, просто очищаем цену
         updateItemField(itemId, 'sale_price', '')
-            .then(handleUpdateResponse(cell, row, 'sale_price', '', 'Цена продажи очищена'))
-            .catch(handleUpdateError(editInput, displayValue));
+            .then(data => {
+                if (data.success) {
+                    updateCellDisplay(cell, row, 'sale_price', data, newValue);
+                    if (data.financials) {
+                        updateFinancialSummary(data.financials);
+                    }
+                    showToast('Цена продажи очищена', 'success', 1500);
+                } else {
+                    showToast('Ошибка: ' + (data.error || ''), 'error');
+                }
+            })
+            .catch(() => showToast('Ошибка при сохранении', 'error'))
+            .finally(() => {
+                editInput.style.display = 'none';
+                displayValue.style.display = 'inline';
+            });
         return;
     }
+
+    const { dateFrom, dateTo } = getDateFilterParams();
 
     fetch(`/items/${itemId}/update/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': getCookie('csrftoken')
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Date-From': dateFrom,
+            'X-Date-To': dateTo
         },
         body: 'field=sale_date&value='
     })
@@ -301,8 +333,10 @@ function clearSalePriceAndDate(itemId, row, cell, newValue) {
     .then(data => {
         if (data && data.success) {
             updateCellDisplay(cell, row, 'sale_price', data, newValue);
+            if (data.financials) {
+                updateFinancialSummary(data.financials);
+            }
             showToast('Цена продажи и дата продажи очищены', 'success', 1500);
-            reloadPageWithParams();
         }
     })
     .catch(() => showToast('Ошибка при сохранении', 'error'))
@@ -316,54 +350,53 @@ function clearSalePriceAndDate(itemId, row, cell, newValue) {
  * Обновление поля предмета
  */
 function updateItemField(itemId, field, value) {
+    const { dateFrom, dateTo } = getDateFilterParams();
     return fetch(`/items/${itemId}/update/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRFToken': getCookie('csrftoken')
+            'X-CSRFToken': getCookie('csrftoken'),
+            'X-Date-From': dateFrom,
+            'X-Date-To': dateTo
         },
         body: `field=${field}&value=${encodeURIComponent(value)}`
     }).then(r => r.json());
 }
 
 /**
- * Обработчик успешного ответа
+ * Обновление финансовых показателей в шапке
  */
-function handleUpdateResponse(cell, row, field, newValue, message) {
-    return data => {
-        if (data.success) {
-            updateCellDisplay(cell, row, field, data, newValue);
-            showToast(message, 'success', 1500);
-            reloadPageWithParams();
-        } else {
-            showToast('Ошибка: ' + (data.error || ''), 'error');
-        }
-    };
-}
+function updateFinancialSummary(financials) {
+    const totalProfitEl = document.getElementById('summaryTotalProfit');
+    const totalExpensesEl = document.getElementById('summaryTotalExpenses');
+    const reservedAmountEl = document.getElementById('summaryReservedAmount');
+    const netProfitEl = document.getElementById('summaryNetProfit');
 
-/**
- * Обработчик ошибки
- */
-function handleUpdateError(editInput, displayValue) {
-    return () => {
-        showToast('Ошибка при сохранении', 'error');
-        editInput.style.display = 'none';
-        displayValue.style.display = 'inline';
-    };
-}
+    if (totalProfitEl) {
+        const value = parseFloat(financials.total_profit) || 0;
+        totalProfitEl.textContent = value.toLocaleString('ru-RU') + ' ₽';
+        totalProfitEl.classList.remove('text-danger', 'text-success');
+        if (value < 0) totalProfitEl.classList.add('text-danger');
+        else if (value > 0) totalProfitEl.classList.add('text-success');
+    }
 
-/**
- * Перезагрузка страницы с сохранением параметров и позиции скролла
- */
-function reloadPageWithParams() {
-    // Сохраняем позицию скролла в sessionStorage
-    const scrollPosition = window.scrollY;
-    sessionStorage.setItem('scrollPosition', scrollPosition.toString());
-    
-    setTimeout(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        window.location.href = '?' + urlParams.toString();
-    }, DELAY_PAGE_RELOAD);
+    if (totalExpensesEl) {
+        const value = parseFloat(financials.total_expenses) || 0;
+        totalExpensesEl.textContent = '- ' + value.toLocaleString('ru-RU') + ' ₽';
+    }
+
+    if (reservedAmountEl) {
+        const value = parseFloat(financials.reserved_amount) || 0;
+        reservedAmountEl.textContent = value.toLocaleString('ru-RU') + ' ₽';
+    }
+
+    if (netProfitEl) {
+        const value = parseFloat(financials.net_profit) || 0;
+        netProfitEl.textContent = value.toLocaleString('ru-RU') + ' ₽';
+        netProfitEl.classList.remove('text-danger', 'text-success');
+        if (value < 0) netProfitEl.classList.add('text-danger');
+        else if (value > 0) netProfitEl.classList.add('text-success');
+    }
 }
 
 /**
@@ -639,6 +672,10 @@ function openAddPriceModal(cell) {
                     updateCellDisplay(cell, row, 'purchase_price', { value: newPrice }, newPrice.toString());
                     if (addQuantity > 0 && quantityCell) {
                         updateCellDisplay(quantityCell, row, 'quantity', { value: newQty }, newQty.toString());
+                    }
+                    // Обновляем финансовые показатели
+                    if (result.priceData.financials) {
+                        updateFinancialSummary(result.priceData.financials);
                     }
                     showToast('Цена покупки обновлена', 'success');
                     bsModal.hide();

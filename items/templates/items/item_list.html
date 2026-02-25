@@ -50,7 +50,7 @@
             <i class="bi bi-calendar-range me-2"></i>
             Прибыль за период: {{ date_from|date:"d.m.y" }} - {{ date_to|date:"d.m.y" }}
         </span>
-        <span class="summary-value fs-6 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% endif %}">
+        <span class="summary-value fs-6 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% endif %}" id="summaryTotalProfit">
             {{ total_profit|format_price }}
         </span>
     </div>
@@ -59,7 +59,7 @@
             <i class="bi bi-receipt-cutoff me-2"></i>
             Накладные расходы:
         </span>
-        <span class="summary-value fs-6 text-danger">
+        <span class="summary-value fs-6 text-danger" id="summaryTotalExpenses">
             - {{ total_expenses|format_price }}
         </span>
     </div>
@@ -68,7 +68,7 @@
             <i class="bi bi-piggy-bank me-2"></i>
             Зарезервировано:
         </span>
-        <span class="summary-value fs-6 text-secondary">
+        <span class="summary-value fs-6 text-secondary" id="summaryReservedAmount">
             {{ reserved_amount|format_price }}
         </span>
     </div>
@@ -78,7 +78,7 @@
             <i class="bi bi-graph-up-arrow me-2"></i>
             <strong>Чистая прибыль:</strong>
         </span>
-        <span class="summary-value fs-5 {% if net_profit < 0 %}text-danger{% elif net_profit > 0 %}text-success{% endif %}">
+        <span class="summary-value fs-5 {% if net_profit < 0 %}text-danger{% elif net_profit > 0 %}text-success{% endif %}" id="summaryNetProfit">
             {{ net_profit|format_price }}
         </span>
     </div>

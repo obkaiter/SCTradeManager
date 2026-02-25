@@ -230,3 +230,14 @@ function formatDate(date) {
         year: '2-digit'
     });
 }
+
+/**
+ * Получение параметров даты фильтрации из URL
+ * @returns {{dateFrom: string, dateTo: string}}
+ */
+function getDateFilterParams() {
+    const params = new URLSearchParams(window.location.search);
+    const dateFrom = params.get('date_from') || '';
+    const dateTo = params.get('date_to') || '';
+    return { dateFrom, dateTo };
+}
