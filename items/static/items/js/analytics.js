@@ -18,21 +18,6 @@ function submitFilterForm() {
 
 // Инициализация кнопок фильтра
 function initFilterButtons() {
-    // Кнопка "Сегодня"
-    const todayBtn = document.getElementById('todayBtn');
-    if (todayBtn) {
-        todayBtn.addEventListener('click', function() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const today = `${year}-${month}-${day}`;
-            document.getElementById('dateFrom').value = today;
-            document.getElementById('dateTo').value = today;
-            submitFilterForm();
-        });
-    }
-
     // Кнопка "Неделя"
     const weekBtn = document.getElementById('weekBtn');
     if (weekBtn) {
@@ -44,6 +29,54 @@ function initFilterButtons() {
             const yearFrom = lastWeek.getFullYear();
             const monthFrom = String(lastWeek.getMonth() + 1).padStart(2, '0');
             const dayFrom = String(lastWeek.getDate()).padStart(2, '0');
+            const dateFrom = `${yearFrom}-${monthFrom}-${dayFrom}`;
+
+            const yearTo = today.getFullYear();
+            const monthTo = String(today.getMonth() + 1).padStart(2, '0');
+            const dayTo = String(today.getDate()).padStart(2, '0');
+            const dateTo = `${yearTo}-${monthTo}-${dayTo}`;
+
+            document.getElementById('dateFrom').value = dateFrom;
+            document.getElementById('dateTo').value = dateTo;
+            submitFilterForm();
+        });
+    }
+
+    // Кнопка "Месяц"
+    const monthBtn = document.getElementById('monthBtn');
+    if (monthBtn) {
+        monthBtn.addEventListener('click', function() {
+            const today = new Date();
+            const lastMonth = new Date(today);
+            lastMonth.setMonth(today.getMonth() - 1);
+
+            const yearFrom = lastMonth.getFullYear();
+            const monthFrom = String(lastMonth.getMonth() + 1).padStart(2, '0');
+            const dayFrom = String(lastMonth.getDate()).padStart(2, '0');
+            const dateFrom = `${yearFrom}-${monthFrom}-${dayFrom}`;
+
+            const yearTo = today.getFullYear();
+            const monthTo = String(today.getMonth() + 1).padStart(2, '0');
+            const dayTo = String(today.getDate()).padStart(2, '0');
+            const dateTo = `${yearTo}-${monthTo}-${dayTo}`;
+
+            document.getElementById('dateFrom').value = dateFrom;
+            document.getElementById('dateTo').value = dateTo;
+            submitFilterForm();
+        });
+    }
+
+    // Кнопка "Три месяца"
+    const threeMonthsBtn = document.getElementById('threeMonthsBtn');
+    if (threeMonthsBtn) {
+        threeMonthsBtn.addEventListener('click', function() {
+            const today = new Date();
+            const threeMonthsAgo = new Date(today);
+            threeMonthsAgo.setMonth(today.getMonth() - 3);
+
+            const yearFrom = threeMonthsAgo.getFullYear();
+            const monthFrom = String(threeMonthsAgo.getMonth() + 1).padStart(2, '0');
+            const dayFrom = String(threeMonthsAgo.getDate()).padStart(2, '0');
             const dateFrom = `${yearFrom}-${monthFrom}-${dayFrom}`;
 
             const yearTo = today.getFullYear();

@@ -150,23 +150,23 @@ function updateFilterButtonLabels() {
     const urlParams = new URLSearchParams(window.location.search);
     const dateFrom = urlParams.get('date_from');
     const dateTo = urlParams.get('date_to');
-    
+
     if (dateFrom && dateTo) {
         const from = new Date(dateFrom);
         const to = new Date(dateTo);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        
-        const weekAgo = new Date(today);
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        
+
+        const threeDaysAgo = new Date(today);
+        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
         // Проверка на "сегодня"
         if (from.getTime() === today.getTime() && to.getTime() === today.getTime()) {
             highlightActiveFilterButton('todayBtn');
         }
-        // Проверка на "неделя"
-        else if (from.getTime() === weekAgo.getTime() && to.getTime() === today.getTime()) {
-            highlightActiveFilterButton('weekBtn');
+        // Проверка на "3 дня"
+        else if (from.getTime() === threeDaysAgo.getTime() && to.getTime() === today.getTime()) {
+            highlightActiveFilterButton('threeDaysBtn');
         }
         // Проверка на "всё"
         else if (from.getFullYear() <= 2020 && to.getFullYear() >= 2099) {
@@ -179,7 +179,7 @@ function updateFilterButtonLabels() {
  * Подсветка активной кнопки фильтра
  */
 function highlightActiveFilterButton(activeId) {
-    ['todayBtn', 'weekBtn', 'showAllBtn'].forEach(id => {
+    ['todayBtn', 'threeDaysBtn', 'showAllBtn'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
             if (id === activeId) {
@@ -226,16 +226,16 @@ function setupDateFilterButtons(hideSoldState) {
         });
     }
 
-    const weekBtn = document.getElementById('weekBtn');
-    if (weekBtn) {
-        weekBtn.addEventListener('click', function() {
+    const threeDaysBtn = document.getElementById('threeDaysBtn');
+    if (threeDaysBtn) {
+        threeDaysBtn.addEventListener('click', function() {
             const today = new Date();
-            const lastWeek = new Date(today);
-            lastWeek.setDate(today.getDate() - 7);
+            const threeDaysAgo = new Date(today);
+            threeDaysAgo.setDate(today.getDate() - 3);
 
-            const yearFrom = lastWeek.getFullYear();
-            const monthFrom = String(lastWeek.getMonth() + 1).padStart(2, '0');
-            const dayFrom = String(lastWeek.getDate()).padStart(2, '0');
+            const yearFrom = threeDaysAgo.getFullYear();
+            const monthFrom = String(threeDaysAgo.getMonth() + 1).padStart(2, '0');
+            const dayFrom = String(threeDaysAgo.getDate()).padStart(2, '0');
             const dateFrom = `${yearFrom}-${monthFrom}-${dayFrom}`;
 
             const yearTo = today.getFullYear();
