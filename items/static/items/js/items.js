@@ -8,6 +8,13 @@ const DELAY_DOUBLE_CLICK = 200;
 // Переменные для контекстного меню
 let contextMenuCell = null;
 let contextMenu = null;
+let lastMouseX = 0;
+let lastMouseY = 0;
+
+document.addEventListener('mousemove', function(e) {
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+});
 
 document.addEventListener('DOMContentLoaded', function() {
     initContextMenuGlobal();
@@ -24,6 +31,7 @@ function initContextMenuGlobal() {
             e.preventDefault();
             e.stopPropagation();
             contextMenuCell = target;
+            hideCustomTooltip(); // Скрываем подсказку при показе контекстного меню
             showContextMenu(e.pageX, e.pageY);
             return false;
         }
@@ -100,6 +108,11 @@ function copyItemName(cell) {
  * Инициализация редактируемых ячеек
  */
 function initEditableCells(cells) {
+    // Инициализация подсказок для всех ячеек purchase_price
+    document.querySelectorAll('.price-cell[data-field="purchase_price"]').forEach(cell => {
+        updateAveragePriceTooltip(cell);
+    });
+
     cells.forEach(cell => {
         const displayValue = cell.querySelector('.display-value');
         const editInput = cell.querySelector('.edit-input');
@@ -107,7 +120,25 @@ function initEditableCells(cells) {
 
         if (!displayValue || !editInput) return;
 
-        // Фокус - выделение
+        if (field === 'purchase_price') {
+            cell.addEventListener('mouseenter', function() {
+                updateAveragePriceTooltip(cell);
+                if (cell.getAttribute('data-tooltip')) {
+                    showCustomTooltip();
+                }
+            });
+
+            cell.addEventListener('mousemove', function() {
+                const tooltip = document.getElementById('customPurchaseTooltip');
+                if (tooltip && cell.getAttribute('data-tooltip')) {
+                    tooltip.style.left = lastMouseX + 'px';
+                    tooltip.style.top = (lastMouseY + 10) + 'px';
+                }
+            });
+
+            cell.addEventListener('mouseleave', hideCustomTooltip);
+        }
+
         editInput.addEventListener('focus', function() {
             if (field === 'purchase_price' || field === 'sale_price') {
                 this.value = parsePrice(this.value);
@@ -115,11 +146,10 @@ function initEditableCells(cells) {
             }
         });
 
-        // Дабл-клик для редактирования
         cell.addEventListener('dblclick', function() {
+            hideCustomTooltip();
             if (field === 'purchase_price' || field === 'sale_price') {
-                const rawValue = parsePrice(displayValue.textContent);
-                editInput.value = rawValue;
+                editInput.value = parsePrice(displayValue.textContent);
             } else {
                 editInput.value = displayValue.textContent;
             }
@@ -128,7 +158,6 @@ function initEditableCells(cells) {
             editInput.focus();
         });
 
-        // Blur - сохранение
         editInput.addEventListener('blur', function() {
             if (field === 'purchase_price' || field === 'sale_price') {
                 const rawValue = parsePrice(this.value);
@@ -411,6 +440,14 @@ function updateCellDisplay(cell, row, field, data, newValue) {
         displayValue.textContent = numValue.toLocaleString('ru-RU') + ' ₽';
         if (editInput) editInput.value = numValue.toLocaleString('ru-RU') + ' ₽';
         updateProfitCell(row, field, numValue, data, newValue);
+        // Обновляем подсказку средней цены при изменении цены покупки
+        if (field === 'purchase_price') {
+            updateAveragePriceTooltip(cell);
+            if (cell.getAttribute('data-tooltip')) {
+                hideCustomTooltip();
+                showCustomTooltip();
+            }
+        }
     } else if (field === 'purchase_date' || field === 'sale_date') {
         if (data.value) {
             displayValue.textContent = formatDate(data.value);
@@ -424,6 +461,15 @@ function updateCellDisplay(cell, row, field, data, newValue) {
         displayValue.textContent = numValue;
         if (editInput) editInput.value = numValue;
         updateProfitForQuantity(row, numValue);
+        // Обновляем подсказку средней цены при изменении количества
+        const purchasePriceCell = row.querySelector('[data-field="purchase_price"]');
+        if (purchasePriceCell) {
+            updateAveragePriceTooltip(purchasePriceCell);
+            if (purchasePriceCell.getAttribute('data-tooltip')) {
+                hideCustomTooltip();
+                showCustomTooltip();
+            }
+        }
     } else {
         displayValue.textContent = data.value || '';
         if (editInput) editInput.value = data.value || '';
@@ -521,6 +567,71 @@ function getSalePrice(row) {
     const text = cell?.querySelector('.display-value')?.textContent || '';
     const parsed = parseInt(parsePrice(text));
     return isNaN(parsed) || !text ? null : parsed;
+}
+
+/**
+ * Обновить всплывающую подсказку средней цены для ячейки purchase_price
+ */
+function updateAveragePriceTooltip(cell) {
+    if (cell.dataset.field !== 'purchase_price') return;
+
+    const row = cell.closest('tr');
+    const quantityDisplay = row?.querySelector('[data-field="quantity"] .display-value');
+    const purchasePriceDisplay = cell.querySelector('.display-value');
+
+    if (!quantityDisplay || !purchasePriceDisplay) return;
+
+    const quantity = parseInt(quantityDisplay.textContent) || 1;
+    const purchasePrice = parseInt(parsePrice(purchasePriceDisplay.textContent)) || 0;
+
+    if (quantity > 1) {
+        const avgPrice = Math.round(purchasePrice / quantity).toLocaleString('ru-RU');
+        cell.setAttribute('data-tooltip', `Средняя цена: ${avgPrice} ₽`);
+    } else {
+        cell.removeAttribute('data-tooltip');
+    }
+}
+
+/**
+ * Показать кастомную всплывающую подсказку
+ */
+function showCustomTooltip() {
+    const tooltip = document.getElementById('customPurchaseTooltip');
+    if (tooltip) return; // Уже показана
+
+    const cell = document.querySelector('.price-cell[data-field="purchase_price"][data-tooltip]');
+    if (!cell) return;
+
+    const tooltipText = cell.getAttribute('data-tooltip');
+
+    const newTooltip = document.createElement('div');
+    newTooltip.id = 'customPurchaseTooltip';
+    newTooltip.style.cssText = `
+        position: fixed;
+        z-index: 10000;
+        pointer-events: none;
+        background: rgba(30, 30, 30, 0.95);
+        color: #f0f0f0;
+        padding: 10px 14px;
+        border-radius: 6px;
+        border: 1px solid #3e3e42;
+        font-size: 13px;
+        font-weight: 500;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        white-space: nowrap;
+        left: ${lastMouseX}px;
+        top: ${lastMouseY + 10}px;
+    `;
+    newTooltip.textContent = tooltipText;
+    document.body.appendChild(newTooltip);
+}
+
+/**
+ * Скрыть кастомную всплывающую подсказку
+ */
+function hideCustomTooltip() {
+    const existing = document.getElementById('customPurchaseTooltip');
+    if (existing) existing.remove();
 }
 
 /**
