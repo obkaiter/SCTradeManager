@@ -1,7 +1,6 @@
 """
 Сервисный слой для бизнес-логики предметов и расходов.
 """
-from datetime import timedelta
 from django.db.models import Q, Sum, F
 from django.core.cache import cache
 from items.models import Item, Expense
@@ -173,6 +172,7 @@ class ItemService:
         Получить прибыль по предметам (группировка по названию).
         Returns: list of dict с name, total_profit, count, avg_profit
         """
+        # Фильтруем только предметы с ненулевой прибылью
         data = Item.objects.filter(
             sale_date__isnull=False,
             sale_price__isnull=False,
@@ -182,19 +182,28 @@ class ItemService:
             profit=F('sale_price') - F('purchase_price')
         ).values('name').annotate(
             total_profit=Sum('profit'),
-            total_count=Sum('quantity'),
-            items_count=Sum('id')  # Количество записей
+            total_count=Sum('quantity')
+        ).filter(
+            total_profit__isnull=False
         ).order_by('-total_profit')
 
         result = []
         for item in data:
             total_profit = item['total_profit'] or 0
-            count = item['total_count'] or 1
+            total_count = item['total_count'] or 0
+            
+            # Пропускаем предметы с нулевым количеством
+            if total_count == 0:
+                continue
+            
+            # Средняя прибыль = общая прибыль / количество
+            avg_profit = total_profit / total_count
+            
             result.append({
                 'name': item['name'],
-                'count': count,
+                'count': total_count,
                 'total_profit': total_profit,
-                'avg_profit': total_profit / count,
+                'avg_profit': avg_profit,
             })
 
         return result

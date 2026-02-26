@@ -219,11 +219,11 @@
     };
     window.pieChartData = {
         labels: [{% for item in items %}'{{ item.name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-        data: [{% for item in items %}{{ item.total_profit }}{% if not forloop.last %},{% endif %}{% endfor %}],
-        counts: [{% for item in items %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
-        avgProfits: [{% for item in items %}{{ item.avg_profit }}{% if not forloop.last %},{% endif %}{% endfor %}]
+        data: [{% for item in items %}{{ item.total_profit|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        counts: [{% for item in items %}{{ item.count|default:1 }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        avgProfits: [{% for item in items %}{{ item.avg_profit|floatformat:0|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}]
     };
 </script>
 <script src="{% static 'items/js/analytics.js' %}?v=9"></script>
-<script src="{% static 'items/js/analytics_pie.js' %}?v=8"></script>
+<script src="{% static 'items/js/analytics_pie.js' %}?v=12"></script>
 {% endblock %}

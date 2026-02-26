@@ -8,6 +8,12 @@ function formatPrice(value) {
     return num.toLocaleString('ru-RU') + ' ₽';
 }
 
+// Форматирование средней прибыли (целое число)
+function formatAvgPrice(value) {
+    const num = Math.round(parseFloat(value) || 0);
+    return num.toLocaleString('ru-RU') + ' ₽';
+}
+
 // Инициализация круговой диаграммы
 function initPieChart(labels, data, counts, avgProfits) {
     const ctx = document.getElementById('pieChart');
@@ -80,12 +86,12 @@ function initPieChart(labels, data, counts, avgProfits) {
                             const value = context.parsed || 0;
                             const count = counts[index] || 0;
                             const avgProfit = avgProfits[index] || 0;
-                            
+
                             return [
                                 `Предмет: ${label}`,
                                 `Общая прибыль: ${formatPrice(value)}`,
                                 `Количество: ${count}`,
-                                `Средняя прибыль: ${formatPrice(avgProfit)}`
+                                `Средняя прибыль: ${formatAvgPrice(avgProfit)}`
                             ];
                         }
                     },
