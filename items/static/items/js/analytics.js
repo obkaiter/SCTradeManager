@@ -173,10 +173,22 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
             },
             onClick: function(evt, elements) {
                 if (elements.length > 0) {
-                    // Прокрутка к круговой диаграмме
-                    const pieSection = document.querySelector('.card.mt-4');
-                    if (pieSection) {
-                        pieSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const index = elements[0].index;
+                    const selectedDate = labels[index];
+                    
+                    // Установка даты в фильтр
+                    const dateFromInput = document.getElementById('dateFrom');
+                    const dateToInput = document.getElementById('dateTo');
+                    
+                    if (dateFromInput && dateToInput) {
+                        dateFromInput.value = selectedDate;
+                        dateToInput.value = selectedDate;
+                        
+                        // Отправка формы фильтра
+                        const form = document.getElementById('analyticsFilterForm');
+                        if (form) {
+                            form.submit();
+                        }
                     }
                 }
             },

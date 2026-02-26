@@ -224,6 +224,6 @@
         avgProfits: [{% for item in items %}{{ item.avg_profit }}{% if not forloop.last %},{% endif %}{% endfor %}]
     };
 </script>
-<script src="{% static 'items/js/analytics.js' %}?v=8"></script>
+<script src="{% static 'items/js/analytics.js' %}?v=9"></script>
 <script src="{% static 'items/js/analytics_pie.js' %}?v=8"></script>
 {% endblock %}
