@@ -118,31 +118,7 @@ def analytics(request):
     # Финансовые показатели
     financials = _calculate_financials(date_from, date_to)
 
-    # Параметры фильтра
-    hide_sold = request.GET.get('hide_sold', 'false')
-    name_filter = request.GET.get('name', '')
-    sort_by = request.GET.get('sort', '-purchase_date')
-
-    return render(request, 'items/analytics.html', {
-        'labels': labels,
-        'data': data,
-        'date_from': date_from_obj,
-        'date_to': date_to_obj,
-        'total_profit': total_profit,
-        'total_expenses': total_expenses,
-        'reserved_amount': financials['reserved_amount'],
-        'turnover': financials['turnover'],
-        'hide_sold': hide_sold,
-        'name_filter': name_filter,
-        'sort_by': sort_by,
-    })
-
-
-def analytics_pie(request):
-    """Страница аналитики с круговой диаграммой по предметам."""
-    date_from, date_to, date_from_obj, date_to_obj = _parse_date_range(request)
-
-    # Прибыль по предметам (группировка по названию)
+    # Данные для круговой диаграммы (прибыль по предметам)
     items_profit_data = Item.objects.filter(
         sale_date__isnull=False,
         sale_price__isnull=False,
@@ -155,7 +131,6 @@ def analytics_pie(request):
         total_count=Sum('quantity')
     ).order_by('-total_profit')
 
-    # Формируем данные для круговой диаграммы и таблицы
     items_list = []
     for item in items_profit_data:
         total_profit = item['total_profit'] or 0
@@ -167,16 +142,25 @@ def analytics_pie(request):
             'avg_profit': total_profit / count,
         })
 
-    # Параметры для кнопки "Назад"
+    # Параметры фильтра
     hide_sold = request.GET.get('hide_sold', 'false')
     name_filter = request.GET.get('name', '')
+    sort_by = request.GET.get('sort', '-purchase_date')
 
-    return render(request, 'items/analytics_pie.html', {
+    return render(request, 'items/analytics.html', {
+        'labels': labels,
+        'data': data,
         'items': items_list,
         'date_from': date_from_obj,
         'date_to': date_to_obj,
+        'gross_profit': gross_profit,
+        'total_profit': total_profit,
+        'total_expenses': total_expenses,
+        'reserved_amount': financials['reserved_amount'],
+        'turnover': financials['turnover'],
         'hide_sold': hide_sold,
         'name_filter': name_filter,
+        'sort_by': sort_by,
     })
 
 

@@ -197,14 +197,15 @@ function initTableSorting() {
 // Инициализация при загрузке
 (function() {
     function init() {
-        if (!window.chartData) {
+        // Проверяем наличие данных для круговой диаграммы
+        if (!window.pieChartData) {
             return;
         }
 
-        const labels = window.chartData.labels || [];
-        const data = window.chartData.data || [];
-        const counts = window.chartData.counts || [];
-        const avgProfits = window.chartData.avgProfits || [];
+        const labels = window.pieChartData.labels || [];
+        const data = window.pieChartData.data || [];
+        const counts = window.pieChartData.counts || [];
+        const avgProfits = window.pieChartData.avgProfits || [];
 
         if (labels.length > 0 && typeof Chart !== 'undefined') {
             initPieChart(labels, data, counts, avgProfits);

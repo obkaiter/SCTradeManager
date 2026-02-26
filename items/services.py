@@ -44,7 +44,7 @@ class ItemService:
         """
         Сортировка предметов.
         """
-        valid_sort_fields = ['name', 'purchase_price', 'sale_price', 'purchase_date', 'sale_date']
+        valid_sort_fields = ['name', 'quantity', 'purchase_price', 'sale_price', 'purchase_date', 'sale_date']
 
         if sort_by in ['profit', '-profit']:
             items_list = list(items)

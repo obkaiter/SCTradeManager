@@ -173,15 +173,11 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
             },
             onClick: function(evt, elements) {
                 if (elements.length > 0) {
-                    const index = elements[0].index;
-                    const selectedDate = labels[index];
-                    const url = "/items/analytics/pie/?" +
-                        'date_from=' + selectedDate +
-                        '&date_to=' + selectedDate +
-                        '&hide_sold=false' +
-                        '&name=' + encodeURIComponent(nameFilter || '') +
-                        '&sort=' + encodeURIComponent(sortBy || '-purchase_date');
-                    window.location.href = url;
+                    // Прокрутка к круговой диаграмме
+                    const pieSection = document.querySelector('.card.mt-4');
+                    if (pieSection) {
+                        pieSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
                 }
             },
             scales: {

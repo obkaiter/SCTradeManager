@@ -9,7 +9,6 @@ from items.views import (
     expense_update,
     expense_delete,
     analytics,
-    analytics_pie,
     flesh_prices,
     add_flesh_items,
 )
@@ -19,7 +18,6 @@ app_name = 'items'
 urlpatterns = [
     path('', item_list, name='item_list'),
     path('analytics/', analytics, name='analytics'),
-    path('analytics/pie/', analytics_pie, name='analytics_pie'),
     path('add/', add_item, name='add_item'),
     path('<int:pk>/update/', update_item, name='update_item'),
     path('<int:pk>/delete/', delete_item, name='delete_item'),
