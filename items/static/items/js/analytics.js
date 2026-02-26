@@ -175,7 +175,7 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
                 if (elements.length > 0) {
                     const index = elements[0].index;
                     const selectedDate = labels[index];
-                    const url = "/items/?" +
+                    const url = "/items/analytics/pie/?" +
                         'date_from=' + selectedDate +
                         '&date_to=' + selectedDate +
                         '&hide_sold=false' +

@@ -4,7 +4,7 @@ Views для работы с предметами.
 from collections import defaultdict
 from datetime import datetime, timedelta
 
-from django.db.models import Sum, F
+from django.db.models import Sum, F, Count
 from django.shortcuts import render
 from django.utils import timezone
 
@@ -71,7 +71,7 @@ def _calculate_financials(date_from, date_to):
 
 
 def analytics(request):
-    """Страница аналитики с диаграммой чистой прибыли по дням."""
+    """Страница аналитики с диаграммой прибыли по дням."""
     date_from, date_to, date_from_obj, date_to_obj = _parse_date_range(request)
 
     # Прибыль по дням продажи
@@ -135,6 +135,48 @@ def analytics(request):
         'hide_sold': hide_sold,
         'name_filter': name_filter,
         'sort_by': sort_by,
+    })
+
+
+def analytics_pie(request):
+    """Страница аналитики с круговой диаграммой по предметам."""
+    date_from, date_to, date_from_obj, date_to_obj = _parse_date_range(request)
+
+    # Прибыль по предметам (группировка по названию)
+    items_profit_data = Item.objects.filter(
+        sale_date__isnull=False,
+        sale_price__isnull=False,
+        sale_date__gte=date_from,
+        sale_date__lte=date_to
+    ).annotate(
+        profit=F('sale_price') - F('purchase_price')
+    ).values('name').annotate(
+        total_profit=Sum('profit'),
+        total_count=Sum('quantity')
+    ).order_by('-total_profit')
+
+    # Формируем данные для круговой диаграммы и таблицы
+    items_list = []
+    for item in items_profit_data:
+        total_profit = item['total_profit'] or 0
+        count = item['total_count'] or 1
+        items_list.append({
+            'name': item['name'],
+            'count': count,
+            'total_profit': total_profit,
+            'avg_profit': total_profit / count,
+        })
+
+    # Параметры для кнопки "Назад"
+    hide_sold = request.GET.get('hide_sold', 'false')
+    name_filter = request.GET.get('name', '')
+
+    return render(request, 'items/analytics_pie.html', {
+        'items': items_list,
+        'date_from': date_from_obj,
+        'date_to': date_to_obj,
+        'hide_sold': hide_sold,
+        'name_filter': name_filter,
     })
 
 

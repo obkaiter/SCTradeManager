@@ -1,0 +1,128 @@
+{% extends 'items/base.html' %}
+{% load static %}
+{% load item_tags %}
+{% load l10n %}
+
+{% block title %}Аналитика - круговая диаграмма{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
+{% endblock %}
+
+{% block content %}
+<!-- Заголовок и навигация -->
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="mb-0">
+            <i class="bi bi-pie-chart-fill me-2"></i>
+            Прибыль по предметам
+        </h2>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'items:analytics' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&hide_sold={{ hide_sold }}&name={{ name_filter }}&sort={{ sort_by }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-1"></i>
+            Назад
+        </a>
+        <a href="{% url 'items:item_list' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&hide_sold={{ hide_sold }}&name={{ name_filter }}&sort={{ sort_by }}" class="btn btn-info ms-2">
+            <i class="bi bi-table me-1"></i>
+            Просмотр
+        </a>
+    </div>
+</div>
+
+<!-- Информация о периоде -->
+<div class="card mb-4">
+    <div class="card-body">
+        <p class="mb-0">
+            <i class="bi bi-calendar-range me-2"></i>
+            Период: <strong>{{ date_from|date:"d.m.Y" }} - {{ date_to|date:"d.m.Y" }}</strong>
+        </p>
+    </div>
+</div>
+
+<!-- Круговая диаграмма -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-pie-chart-fill me-2"></i>
+        Распределение прибыли по предметам
+    </div>
+    <div class="card-body">
+        {% if items|length == 0 %}
+        <div class="alert alert-info mb-0">
+            <i class="bi bi-info-circle me-2"></i>
+            Нет данных о продажах за выбранный период. Выберите другой диапазон дат.
+        </div>
+        {% else %}
+        <div id="chartContainer" style="height: 480px; position: relative;">
+            <canvas id="pieChart"></canvas>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Легенда с данными -->
+{% if items %}
+<div class="card mt-4">
+    <div class="card-header">
+        <i class="bi bi-list-ul me-2"></i>
+        Детализация по предметам
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-excel mb-0">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;" class="text-center">#</th>
+                        <th class="sortable" data-sort="name" style="width: 200px;">
+                            <i class="bi bi-tag me-1"></i>
+                            Название
+                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                        </th>
+                        <th class="sortable text-center" data-sort="count" style="width: 100px;">
+                            <i class="bi bi-hash me-1"></i>
+                            Количество
+                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                        </th>
+                        <th class="sortable text-right" data-sort="total_profit" style="width: 120px;">
+                            <i class="bi bi-graph-up me-1"></i>
+                            Общая прибыль
+                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                        </th>
+                        <th class="sortable text-right" data-sort="avg_profit" style="width: 120px;">
+                            <i class="bi bi-trophy me-1"></i>
+                            Средняя прибыль
+                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td class="text-center">{{ forloop.counter }}</td>
+                        <td>{{ item.name }}</td>
+                        <td class="text-center">{{ item.count }}</td>
+                        <td class="text-right">{{ item.total_profit|format_price }}</td>
+                        <td class="text-right">{{ item.avg_profit|format_price }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    window.chartData = {
+        labels: [{% for item in items %}'{{ item.name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
+        data: [{% for item in items %}{{ item.total_profit }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        counts: [{% for item in items %}{{ item.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+        avgProfits: [{% for item in items %}{{ item.avg_profit }}{% if not forloop.last %},{% endif %}{% endfor %}]
+    };
+    window.itemsData = {{ items|safe }};
+</script>
+<script src="{% static 'items/js/analytics_pie.js' %}?v=7"></script>
+{% endblock %}
