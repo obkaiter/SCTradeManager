@@ -1,14 +1,11 @@
 """
 Views для работы с предметами.
 """
-from collections import defaultdict
 from datetime import datetime, timedelta
 
-from django.db.models import Sum, F, Count
 from django.shortcuts import render
 from django.utils import timezone
 
-from items.models import Item
 from items.services import ItemService, ExpenseService
 
 
@@ -33,73 +30,20 @@ def _parse_date_range(request):
     return date_from, date_to, date_from_obj, date_to_obj
 
 
-def _calculate_financials(date_from, date_to):
-    """Расчёт финансовых показателей."""
-    # Прибыль от продаж
-    sold_items = Item.objects.filter(
-        sale_date__isnull=False,
-        sale_date__gte=date_from,
-        sale_date__lte=date_to
-    )
-    total_profit = sold_items.aggregate(
-        total=Sum(F('sale_price') - F('purchase_price'))
-    )['total'] or 0
-
-    # Расходы
-    expenses = ExpenseService.get_expenses_in_period(date_from, date_to)
-    total_expenses = ExpenseService.calculate_total_expenses(expenses)
-
-    # Зарезервировано
-    reserved_items = Item.objects.filter(
-        sale_date__isnull=True,
-        purchase_date__gte=date_from,
-        purchase_date__lte=date_to
-    )
-    reserved_amount = ItemService.calculate_reserved_amount(reserved_items)
-
-    # Оборот (сумма продаж за период)
-    sales_total = sold_items.aggregate(total=Sum('sale_price'))['total'] or 0
-    turnover = sales_total
-
-    return {
-        'total_profit': total_profit,
-        'total_expenses': total_expenses,
-        'reserved_amount': reserved_amount,
-        'turnover': turnover,
-        'net_profit': total_profit - total_expenses,
-    }
-
-
 def analytics(request):
     """Страница аналитики с диаграммой прибыли по дням."""
     date_from, date_to, date_from_obj, date_to_obj = _parse_date_range(request)
 
-    # Прибыль по дням продажи
-    daily_profit_data = Item.objects.filter(
-        sale_date__isnull=False,
-        sale_date__gte=date_from,
-        sale_date__lte=date_to
-    ).annotate(
-        profit=F('sale_price') - F('purchase_price')
-    ).values('sale_date').annotate(
-        total_profit=Sum('profit')
-    ).order_by('sale_date')
+    # Прибыль по дням продажи (оптимизировано)
+    daily_profit_data = ItemService.get_daily_profit_data(date_from, date_to)
 
-    gross_profit = sum(entry['total_profit'] or 0 for entry in daily_profit_data)
-
-    # Расходы по дням
-    expenses_in_period = ExpenseService.get_expenses_in_period(date_from, date_to)
-    daily_expenses_data = defaultdict(int)
-    for exp in expenses_in_period:
-        daily_expenses_data[exp.date] += exp.amount
-
-    total_expenses = ExpenseService.calculate_total_expenses(expenses_in_period)
-    total_profit = gross_profit - total_expenses
+    # Расходы по дням (оптимизировано)
+    daily_expenses_data = ExpenseService.get_daily_expenses_data(date_from, date_to)
 
     # Собираем все даты
     all_dates = set()
     for entry in daily_profit_data:
-        all_dates.add(entry['sale_date'])
+        all_dates.add(entry['date'])
     for exp_date in daily_expenses_data.keys():
         all_dates.add(exp_date)
 
@@ -107,40 +51,19 @@ def analytics(request):
     labels = []
     data = []
     for date in sorted(all_dates):
-        labels.append(date.strftime('%Y-%m-%d'))
+        labels.append(date.strftime('%Y-%m-%d') if hasattr(date, 'strftime') else str(date))
         day_profit = next(
-            (entry['total_profit'] or 0 for entry in daily_profit_data if entry['sale_date'] == date),
+            (entry['total_profit'] or 0 for entry in daily_profit_data if entry['date'] == date),
             0
         )
         day_expenses = daily_expenses_data.get(date, 0)
         data.append(day_profit - day_expenses)
 
-    # Финансовые показатели
-    financials = _calculate_financials(date_from, date_to)
+    # Финансовые показатели (оптимизировано с кэшированием)
+    financials = ItemService.calculate_financials_fast(date_from, date_to)
 
-    # Данные для круговой диаграммы (прибыль по предметам)
-    items_profit_data = Item.objects.filter(
-        sale_date__isnull=False,
-        sale_price__isnull=False,
-        sale_date__gte=date_from,
-        sale_date__lte=date_to
-    ).annotate(
-        profit=F('sale_price') - F('purchase_price')
-    ).values('name').annotate(
-        total_profit=Sum('profit'),
-        total_count=Sum('quantity')
-    ).order_by('-total_profit')
-
-    items_list = []
-    for item in items_profit_data:
-        total_profit = item['total_profit'] or 0
-        count = item['total_count'] or 1
-        items_list.append({
-            'name': item['name'],
-            'count': count,
-            'total_profit': total_profit,
-            'avg_profit': total_profit / count,
-        })
+    # Данные для круговой диаграммы (оптимизировано)
+    items_list = ItemService.get_items_profit_by_name(date_from, date_to)
 
     # Параметры фильтра
     hide_sold = request.GET.get('hide_sold', 'false')
@@ -153,9 +76,9 @@ def analytics(request):
         'items': items_list,
         'date_from': date_from_obj,
         'date_to': date_to_obj,
-        'gross_profit': gross_profit,
-        'total_profit': total_profit,
-        'total_expenses': total_expenses,
+        'gross_profit': financials['gross_profit'],
+        'total_profit': financials['net_profit'],
+        'total_expenses': financials['total_expenses'],
         'reserved_amount': financials['reserved_amount'],
         'turnover': financials['turnover'],
         'hide_sold': hide_sold,
@@ -175,17 +98,19 @@ def item_list(request):
     items = ItemService.get_items_filtered(date_from, date_to, hide_sold, name_filter)
     items = ItemService.sort_items(items, sort_by)
 
-    # Финансовые показатели
-    financials = _calculate_financials(date_from, date_to)
+    # Финансовые показатели (оптимизировано с кэшированием)
+    financials = ItemService.calculate_financials_fast(date_from, date_to)
 
     return render(request, 'items/item_list.html', {
         'items': items,
         'date_from': date_from_obj,
         'date_to': date_to_obj,
-        'total_profit': financials['total_profit'],
+        'gross_profit': financials['gross_profit'],
+        'total_profit': financials['net_profit'],
         'total_expenses': financials['total_expenses'],
         'reserved_amount': financials['reserved_amount'],
         'net_profit': financials['net_profit'],
+        'turnover': financials['turnover'],
         'sort_by': sort_by,
         'hide_sold': hide_sold,
     })

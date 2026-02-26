@@ -15,6 +15,7 @@ echo Для остановки нажмите Ctrl+C
 echo ========================================
 echo.
 
+set DJANGO_DEBUG=True
 venv\Scripts\python.exe manage.py runserver
 
 pause

@@ -3,11 +3,11 @@ from django.utils import timezone
 
 
 class Item(models.Model):
-    name = models.CharField("Название предмета", max_length=255)
+    name = models.CharField("Название предмета", max_length=255, db_index=True)
     purchase_price = models.IntegerField("Цена покупки")
-    sale_price = models.IntegerField("Цена продажи", null=True, blank=True)
-    purchase_date = models.DateField("Дата покупки")
-    sale_date = models.DateField("Дата продажи", null=True, blank=True)
+    sale_price = models.IntegerField("Цена продажи", null=True, blank=True, db_index=True)
+    purchase_date = models.DateField("Дата покупки", db_index=True)
+    sale_date = models.DateField("Дата продажи", null=True, blank=True, db_index=True)
     quantity = models.PositiveIntegerField("Количество", default=1)
 
     class Meta:
@@ -19,6 +19,8 @@ class Item(models.Model):
             models.Index(fields=['sale_date']),
             models.Index(fields=['name']),
             models.Index(fields=['purchase_date', 'sale_date']),
+            models.Index(fields=['sale_price']),
+            models.Index(fields=['sale_date', 'sale_price']),
         ]
 
     def __str__(self):
@@ -36,7 +38,7 @@ class Item(models.Model):
 
 
 class Expense(models.Model):
-    date = models.DateField("Дата")
+    date = models.DateField("Дата", db_index=True)
     amount = models.IntegerField("Сумма")
 
     class Meta:

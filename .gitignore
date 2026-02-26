@@ -37,6 +37,11 @@ db.sqlite3-journal
 config.json
 .env
 .env.local
+.env.example
+
+# Логи
+logs/
+*.log
 
 # IDE
 .idea/

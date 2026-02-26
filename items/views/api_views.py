@@ -7,10 +7,10 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
 from django.shortcuts import get_object_or_404, redirect
 from django.utils import timezone
-from django.db.models import Q, Sum, F
-from items.models import Item, FleshPrice, Expense
+
+from items.models import Item, FleshPrice
 from items.forms import ItemForm
-from items.services import ItemService
+from items.services import ItemService, ExpenseService
 
 
 @require_POST
@@ -63,11 +63,11 @@ def update_item(request, pk):
         response_data['profit'] = str(item.profit) if item.profit is not None else ''
         response_data['is_negative'] = item.profit < 0 if item.profit is not None else False
 
-    # Добавляем обновлённые финансовые показатели
-    # Получаем параметры фильтрации из запроса (передаются через заголовки)
+    # Добавляем обновлённые финансовые показатели (оптимизировано)
+    # Получаем параметры фильтрации из запроса
     date_from = request.headers.get('X-Date-From', request.GET.get('date_from', ''))
     date_to = request.headers.get('X-Date-To', request.GET.get('date_to', ''))
-    
+
     # Значения по умолчанию — последние 30 дней
     if not date_from:
         date_from_obj = timezone.now().date() - timedelta(days=30)
@@ -76,7 +76,7 @@ def update_item(request, pk):
             date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
         except (ValueError, TypeError):
             date_from_obj = timezone.now().date() - timedelta(days=30)
-    
+
     if not date_to:
         date_to_obj = timezone.now().date()
     else:
@@ -85,39 +85,14 @@ def update_item(request, pk):
         except (ValueError, TypeError):
             date_to_obj = timezone.now().date()
 
-    # Прибыль от продаж
-    sold_items = Item.objects.filter(
-        sale_date__isnull=False,
-        sale_date__gte=date_from_obj,
-        sale_date__lte=date_to_obj
-    )
-    total_profit = sold_items.aggregate(
-        total=Sum(F('sale_price') - F('purchase_price'))
-    )['total'] or 0
-
-    # Расходы
-    expenses = Expense.objects.filter(
-        date__gte=date_from_obj,
-        date__lte=date_to_obj
-    )
-    total_expenses = sum(exp.amount for exp in expenses)
-
-    # Зарезервировано
-    reserved_items = Item.objects.filter(
-        sale_date__isnull=True,
-        purchase_date__gte=date_from_obj,
-        purchase_date__lte=date_to_obj
-    )
-    reserved_amount = reserved_items.aggregate(total=Sum('purchase_price'))['total'] or 0
-
-    # Чистая прибыль
-    net_profit = total_profit - total_expenses
+    # Оптимизированный расчёт финансовых показателей
+    financials = ItemService.calculate_financials_fast(date_from_obj, date_to_obj)
 
     response_data['financials'] = {
-        'total_profit': total_profit,
-        'total_expenses': total_expenses,
-        'reserved_amount': reserved_amount,
-        'net_profit': net_profit,
+        'total_profit': financials['net_profit'],
+        'total_expenses': financials['total_expenses'],
+        'reserved_amount': financials['reserved_amount'],
+        'net_profit': financials['net_profit'],
     }
 
     return JsonResponse(response_data)
