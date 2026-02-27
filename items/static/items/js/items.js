@@ -124,7 +124,7 @@ function initEditableCells(cells) {
             cell.addEventListener('mouseenter', function() {
                 updateAveragePriceTooltip(cell);
                 if (cell.getAttribute('data-tooltip')) {
-                    showCustomTooltip();
+                    showCustomTooltip(cell);
                 }
             });
 
@@ -445,7 +445,7 @@ function updateCellDisplay(cell, row, field, data, newValue) {
             updateAveragePriceTooltip(cell);
             if (cell.getAttribute('data-tooltip')) {
                 hideCustomTooltip();
-                showCustomTooltip();
+                showCustomTooltip(cell);
             }
         }
     } else if (field === 'purchase_date' || field === 'sale_date') {
@@ -467,7 +467,7 @@ function updateCellDisplay(cell, row, field, data, newValue) {
             updateAveragePriceTooltip(purchasePriceCell);
             if (purchasePriceCell.getAttribute('data-tooltip')) {
                 hideCustomTooltip();
-                showCustomTooltip();
+                showCustomTooltip(purchasePriceCell);
             }
         }
     } else {
@@ -595,14 +595,17 @@ function updateAveragePriceTooltip(cell) {
 /**
  * Показать кастомную всплывающую подсказку
  */
-function showCustomTooltip() {
+function showCustomTooltip(cell) {
     const tooltip = document.getElementById('customPurchaseTooltip');
     if (tooltip) return; // Уже показана
 
-    const cell = document.querySelector('.price-cell[data-field="purchase_price"][data-tooltip]');
-    if (!cell) return;
+    if (!cell) {
+        cell = document.querySelector('.price-cell[data-field="purchase_price"]:hover');
+        if (!cell) return;
+    }
 
     const tooltipText = cell.getAttribute('data-tooltip');
+    if (!tooltipText) return;
 
     const newTooltip = document.createElement('div');
     newTooltip.id = 'customPurchaseTooltip';
