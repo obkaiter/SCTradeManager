@@ -2,15 +2,19 @@
 API views для предметов (AJAX запросы).
 """
 from datetime import datetime, timedelta
+import urllib.request
+import ssl
+import json
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_http_methods
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views.decorators.cache import cache_control
 
-from items.models import Item, FleshPrice
+from items.models import Item, FleshPrice, PriceItem
 from items.forms import ItemForm
-from items.services import ItemService, ExpenseService
+from items.services import ItemService, ExpenseService, PriceCheckService
 
 
 @require_POST
@@ -253,3 +257,111 @@ def add_flesh_items(request):
 
     except (ValueError, TypeError) as e:
         return JsonResponse({'error': str(e)}, status=400)
+
+
+@cache_control(no_cache=True)
+def price_analytics(request):
+    """Страница аналитики цен."""
+    from django.utils import timezone
+    from datetime import timedelta
+    
+    # Получаем параметры фильтра из запроса
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    hide_sold = request.GET.get('hide_sold', 'false')
+    name_filter = request.GET.get('name', '')
+    sort_by = request.GET.get('sort', 'name')
+    
+    # Значения по умолчанию
+    if not date_from:
+        date_from = (timezone.now().date() - timedelta(days=30)).isoformat()
+    if not date_to:
+        date_to = timezone.now().date().isoformat()
+    
+    # Сортировка
+    valid_sort_fields = ['name', '-name']
+    if sort_by not in valid_sort_fields:
+        sort_by = 'name'
+    
+    items = PriceItem.objects.all().order_by(sort_by)
+    
+    return render(request, 'items/price_analytics.html', {
+        'items': items,
+        'date_from': date_from,
+        'date_to': date_to,
+        'hide_sold': hide_sold,
+        'name_filter': name_filter,
+        'sort_by': sort_by,
+    })
+
+
+@require_http_methods(["GET", "POST"])
+def price_item_create(request):
+    """Создание предмета для анализа цен."""
+    if request.method == "POST":
+        name = request.POST.get('name', '').strip()
+        if not name:
+            return JsonResponse({'error': 'Название предмета обязательно'}, status=400)
+        
+        try:
+            item, created = PriceItem.objects.get_or_create(name=name)
+            return JsonResponse({
+                'success': True,
+                'item': {
+                    'id': item.id,
+                    'name': item.name,
+                    'price_24h': item.price_24h,
+                },
+                'created': created
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=400)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@require_http_methods(["POST", "DELETE"])
+def price_item_delete(request, pk):
+    """Удаление предмета из анализа цен."""
+    item = get_object_or_404(PriceItem, pk=pk)
+    item.delete()
+    return JsonResponse({'success': True})
+
+
+@require_POST
+def price_item_refresh(request):
+    """Обновление цен для всех предметов через парсинг."""
+    try:
+        items = list(PriceItem.objects.all())
+        if not items:
+            return JsonResponse({
+                'success': True,
+                'updated': 0,
+                'failed': [],
+                'message': 'Нет предметов для обновления'
+            })
+        
+        updated_count = 0
+        failed_items = []
+        
+        for item in items:
+            try:
+                price = PriceCheckService.get_price_24h(item.name)
+                if price is not None:
+                    item.price_24h = price
+                    item.save()
+                    updated_count += 1
+                else:
+                    failed_items.append(item.name)
+            except Exception as e:
+                failed_items.append(item.name)
+        
+        return JsonResponse({
+            'success': True,
+            'updated': updated_count,
+            'failed': failed_items,
+            'total': len(items)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

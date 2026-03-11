@@ -3,6 +3,10 @@
 """
 from django.db.models import Q, Sum, F
 from django.core.cache import cache
+from django.conf import settings
+import urllib.request
+import ssl
+import json
 from items.models import Item, Expense
 
 
@@ -305,3 +309,109 @@ class ExpenseService:
             return True, None
         except (ValueError, TypeError) as e:
             return False, str(e)
+
+
+class PriceCheckService:
+    """Сервис для парсинга цен с сайта stagnate.ru."""
+
+    API_URL = "https://www.stagnate.ru/api/pricecheck-pivot"
+
+    @staticmethod
+    def _fetch_api_data() -> list | None:
+        """Получает данные из API stagnate.ru"""
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/json, text/javascript, */*; q=0.01",
+            "Accept-Language": "ru-RU,ru;q=0.9",
+            "X-Requested-With": "XMLHttpRequest",
+        }
+
+        try:
+            req = urllib.request.Request(PriceCheckService.API_URL, headers=headers)
+            with urllib.request.urlopen(req, context=ctx, timeout=30) as response:
+                data = response.read().decode('utf-8')
+            return json.loads(data)
+        except Exception:
+            return None
+
+    @staticmethod
+    def get_price_24h(item_name: str) -> int | None:
+        """
+        Получает цену предмета за сутки с сайта stagnate.ru.
+
+        Args:
+            item_name: Название предмета
+
+        Returns:
+            Цена за сутки (число) или None если не найдено
+        """
+        json_data = PriceCheckService._fetch_api_data()
+        if not json_data:
+            return None
+
+        item_name_lower = item_name.lower()
+
+        for item in json_data:
+            if not isinstance(item, dict) or 'name' not in item:
+                continue
+
+            name = item.get('name', '')
+
+            # Точное совпадение названия
+            if name.lower() == item_name_lower:
+                return item.get('hours_024_median')
+
+        # Если точное совпадение не найдено, ищем частичное
+        for item in json_data:
+            if not isinstance(item, dict) or 'name' not in item:
+                continue
+
+            name = item.get('name', '')
+            if item_name_lower in name.lower():
+                return item.get('hours_024_median')
+
+        return None
+
+    @staticmethod
+    def get_all_prices(item_names: list) -> dict:
+        """
+        Получает цены для списка предметов.
+
+        Args:
+            item_names: Список названий предметов
+
+        Returns:
+            dict {name: price_24h} для найденных, {name: None} для не найденных
+        """
+        json_data = PriceCheckService._fetch_api_data()
+        if not json_data:
+            return {name: None for name in item_names}
+
+        results = {}
+        item_names_lower = {name.lower(): name for name in item_names}
+
+        for item in json_data:
+            if not isinstance(item, dict) or 'name' not in item:
+                continue
+
+            api_name = item.get('name', '')
+            api_name_lower = api_name.lower()
+
+            # Ищем совпадения
+            for search_lower, original_name in item_names_lower.items():
+                if api_name_lower == search_lower:
+                    results[original_name] = item.get('hours_024_median')
+                    break
+                elif search_lower in api_name_lower and original_name not in results:
+                    results[original_name] = item.get('hours_024_median')
+
+        # Добавляем None для не найденных
+        for name in item_names:
+            if name not in results:
+                results[name] = None
+
+        return results
