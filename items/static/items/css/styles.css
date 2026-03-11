@@ -1,36 +1,42 @@
 /**
  * Styles for p2p_python3 items application
- * KDE Plasma Dark Theme
+ * Lunar Client Theme
  */
 
 :root {
-    /* KDE Plasma Dark Theme Colors */
-    --bg-primary: #1e1e1e;
-    --bg-secondary: #252526;
-    --bg-card: #252526;
-    --bg-table: #252526;
-    --bg-modal: #252526;
-    --bg-input: #1e1e1e;
-    --bg-hover: #2d2d30;
-    --bg-header: #2d2d30;
-    --bg-button: #3e3e42;
-    --text-primary: #f0f0f0;
-    --text-secondary: #b0b0b0;
-    --text-muted: #858585;
-    --border-color: #3e3e42;
-    --border-light: #4e4e52;
-    --accent-blue: #4da6ff;
-    --accent-info: #20c997;
-    --accent-success: #28a745;
-    --accent-warning: #ffc107;
-    --accent-danger: #dc3545;
-    --gradient-info: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
-    --gradient-header: linear-gradient(135deg, #252526 0%, #2d2d30 100%);
-    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.5);
-    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.4);
-    --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
+    /* Lunar Client Color Scheme - Dark Blue Theme */
+    --bg-primary: #0f1115;
+    --bg-secondary: #151920;
+    --bg-card: #1a1f29;
+    --bg-table: #1a1f29;
+    --bg-modal: #1a1f29;
+    --bg-input: #0f1115;
+    --bg-hover: #1e2530;
+    --bg-header: #151920;
+    --bg-button: #1e2530;
+    --text-primary: #ffffff;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border-color: #2a3140;
+    --border-light: #374151;
+    --accent-blue: #5865F2;
+    --accent-blue-light: #707dcf;
+    --accent-blue-dark: #4752c4;
+    --accent-red: #ef4444;
+    --accent-red-light: #f87171;
+    --accent-red-dark: #dc2626;
+    --accent-info: #5865F2;
+    --accent-success: #10b981;
+    --accent-warning: #f59e0b;
+    --accent-danger: #ef4444;
+    --gradient-info: linear-gradient(135deg, #151920 0%, #1a1f29 100%);
+    --gradient-header: linear-gradient(135deg, #151920 0%, #1a1f29 100%);
+    --gradient-accent: linear-gradient(135deg, #5865F2 0%, #707dcf 100%);
+    --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.6);
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
     /* Font sizes */
     --font-base: 16px;
     --font-sm: 14px;
@@ -99,7 +105,7 @@ h6 { font-size: 14px; }
     border-radius: 4px;
 }
 .editable-cell:hover {
-    background-color: rgba(77, 166, 255, 0.1);
+    background-color: rgba(88, 101, 242, 0.15);
 }
 .editable-cell input {
     border: 2px solid var(--accent-blue);
@@ -117,7 +123,7 @@ h6 { font-size: 14px; }
     background-color: var(--bg-input);
     color: var(--text-primary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(77, 166, 255, 0.2);
+    box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.25);
 }
 .editable-cell input[type="date"] {
     background-color: var(--bg-input);
@@ -270,15 +276,15 @@ h6 { font-size: 14px; }
 
 /* Bootstrap button overrides */
 .btn-primary {
-    background-color: var(--accent-blue);
+    background: var(--gradient-accent);
     border-color: var(--accent-blue);
     color: white;
 }
 .btn-primary:hover, .btn-primary:focus {
-    background-color: #3d8bdb;
-    border-color: #3d8bdb;
+    background: linear-gradient(135deg, #707dcf 0%, #5865F2 100%);
+    border-color: var(--accent-blue-light);
     color: white;
-    box-shadow: 0 0 0 3px rgba(77, 166, 255, 0.3);
+    box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.4);
 }
 .btn-info {
     background-color: #0d6efd;
@@ -340,7 +346,7 @@ h6 { font-size: 14px; }
     border-color: var(--accent-blue);
 }
 .btn-outline-primary:hover {
-    background-color: var(--accent-blue);
+    background: var(--gradient-accent);
     border-color: var(--accent-blue);
     color: white;
 }
@@ -437,7 +443,7 @@ h6 { font-size: 14px; }
     background-color: var(--bg-hover);
     border-color: var(--accent-blue);
     color: var(--text-primary);
-    box-shadow: 0 0 0 3px rgba(77, 166, 255, 0.25);
+    box-shadow: 0 0 0 3px rgba(88, 101, 242, 0.3);
 }
 .form-control::placeholder {
     color: var(--text-muted);

@@ -109,43 +109,32 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
     const context = ctx.getContext('2d');
     const chartContainer = document.getElementById('chartContainer');
 
-    // Динамическая высота контейнера
-    const barHeight = 35;
-    const minHeight = 300;
-    const maxHeight = 2000;
-    const calculatedHeight = Math.max(minHeight, Math.min(maxHeight, labels.length * barHeight));
-
+    // Фиксированная высота контейнера
     if (chartContainer) {
-        chartContainer.style.height = calculatedHeight + 'px';
+        chartContainer.style.height = '400px';
     }
 
-    // Цвета для столбцов
-    const backgroundColors = data.map(value => value >= 0 
-        ? 'rgba(40, 167, 69, 0.8)' 
-        : 'rgba(220, 53, 69, 0.8)'
-    );
-    const borderColors = data.map(value => value >= 0 
-        ? 'rgb(40, 167, 69)' 
-        : 'rgb(220, 53, 69)'
-    );
-
     new Chart(context, {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: labels,
             datasets: [{
                 label: 'Чистая прибыль',
                 data: data,
-                backgroundColor: backgroundColors,
-                borderColor: borderColors,
-                borderWidth: 1,
-                borderRadius: 4,
-                barThickness: 14,
-                minBarLength: 10,
+                borderColor: 'rgb(40, 167, 69)',
+                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                pointBackgroundColor: 'rgb(40, 167, 69)',
+                pointBorderColor: 'rgb(40, 167, 69)',
+                pointHoverBackgroundColor: 'rgb(40, 167, 69)',
+                pointHoverBorderColor: 'rgb(40, 167, 69)',
             }]
         },
         options: {
-            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
@@ -158,7 +147,7 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
                             const date = context.label;
                             const [year, month, day] = date.split('-');
                             const formattedDate = `${day}.${month}.${year}`;
-                            return `Дата: ${formattedDate} | Чистая прибыль: ${formatPrice(context.parsed.x)}`;
+                            return `Дата: ${formattedDate} | Чистая прибыль: ${formatPrice(context.parsed.y)}`;
                         }
                     },
                     backgroundColor: 'rgba(30, 30, 30, 0.95)',
@@ -175,15 +164,15 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
                 if (elements.length > 0) {
                     const index = elements[0].index;
                     const selectedDate = labels[index];
-                    
+
                     // Установка даты в фильтр
                     const dateFromInput = document.getElementById('dateFrom');
                     const dateToInput = document.getElementById('dateTo');
-                    
+
                     if (dateFromInput && dateToInput) {
                         dateFromInput.value = selectedDate;
                         dateToInput.value = selectedDate;
-                        
+
                         // Отправка формы фильтра
                         const form = document.getElementById('analyticsFilterForm');
                         if (form) {
@@ -194,6 +183,27 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
             },
             scales: {
                 x: {
+                    title: {
+                        display: true,
+                        text: 'Дата',
+                        color: '#f0f0f0',
+                        font: {
+                            size: 14,
+                            weight: '600'
+                        }
+                    },
+                    ticks: {
+                        color: '#b0b0b0',
+                        font: {
+                            size: 13
+                        }
+                    },
+                    grid: {
+                        color: '#3e3e42',
+                        lineWidth: 1
+                    }
+                },
+                y: {
                     beginAtZero: true,
                     title: {
                         display: true,
@@ -211,27 +221,6 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
                         },
                         callback: function(value) {
                             return value.toLocaleString('ru-RU') + ' ₽';
-                        }
-                    },
-                    grid: {
-                        color: '#3e3e42',
-                        lineWidth: 1
-                    }
-                },
-                y: {
-                    title: {
-                        display: true,
-                        text: 'Дата',
-                        color: '#f0f0f0',
-                        font: {
-                            size: 14,
-                            weight: '600'
-                        }
-                    },
-                    ticks: {
-                        color: '#b0b0b0',
-                        font: {
-                            size: 13
                         }
                     },
                     grid: {
