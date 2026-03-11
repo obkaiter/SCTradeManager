@@ -15,6 +15,10 @@
     <div class="col-md-6">
         <!-- Кнопки действий - строка 1 -->
         <div class="d-flex justify-content-end gap-2 flex-wrap mb-2">
+            <a href="{% url 'items:price_analytics' %}" id="priceAnalyticsLink" class="btn btn-warning">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span class="d-none d-sm-inline">Цены</span>
+            </a>
             <a href="#" id="analyticsLink" class="btn btn-info">
                 <i class="bi bi-bar-chart-line"></i>
                 <span class="d-none d-sm-inline">Аналитика</span>

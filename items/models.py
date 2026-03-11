@@ -75,3 +75,19 @@ class FleshPrice(models.Model):
         if not instance:
             instance = cls.objects.create()
         return instance
+
+
+class PriceItem(models.Model):
+    """Модель для хранения предметов в аналитике цен."""
+    name = models.CharField("Название предмета", max_length=255, db_index=True, unique=True)
+    price_24h = models.IntegerField("Цена за сутки", null=True, blank=True)
+    created_at = models.DateTimeField("Дата добавления", auto_now_add=True)
+    updated_at = models.DateTimeField("Дата обновления", auto_now=True)
+
+    class Meta:
+        verbose_name = "Предмет для анализа цен"
+        verbose_name_plural = "Предметы для анализа цен"
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name

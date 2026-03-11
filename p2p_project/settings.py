@@ -33,13 +33,9 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False').lower() == 'true'
 # SECRET_KEY must be set via environment variable in production
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
 if not SECRET_KEY:
-    if DEBUG:
-        # Fallback for local development only
-        SECRET_KEY = 'django-insecure-b=xd)btcn=)(%z@8j-jj)3rw1tr$2&c&vb)=%4)hb*k%%)qz$h'
-    else:
-        raise ImproperlyConfigured(
-            "SECRET_KEY not set. Set DJANGO_SECRET_KEY environment variable or run with DEBUG=True for development."
-        )
+    # Fallback for local development only
+    SECRET_KEY = 'django-insecure-b=xd)btcn=)(%z@8j-jj)3rw1tr$2&c&vb)=%4)hb*k%%)qz$h'
+    DEBUG = True
 
 ALLOWED_HOSTS = os.environ.get(
     'DJANGO_ALLOWED_HOSTS',

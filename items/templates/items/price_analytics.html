@@ -1,0 +1,173 @@
+{% extends 'items/base.html' %}
+{% load item_tags %}
+{% load static %}
+
+{% block title %}Аналитика цен{% endblock %}
+
+{% block content %}
+<!-- Заголовок страницы -->
+<div class="row mb-4 align-items-center">
+    <div class="col-md-8">
+        <h2 class="mb-0">
+            <i class="bi bi-graph-up-arrow me-2"></i>
+            Аналитика цен
+        </h2>
+    </div>
+    <div class="col-md-4 text-md-end mt-3 mt-md-0">
+        <a href="{% url 'items:item_list' %}?hide_sold={{ hide_sold }}&name={{ name_filter }}&sort={{ sort_by }}" class="btn btn-secondary" id="backToMainBtn">
+            <i class="bi bi-house-door me-1"></i>
+            На главную
+        </a>
+    </div>
+</div>
+
+<!-- Кнопки действий -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addPriceItemModal">
+                <i class="bi bi-plus-lg"></i>
+                <span class="d-none d-sm-inline">Добавить</span>
+            </button>
+            <button type="button" class="btn btn-primary" id="refreshPricesBtn">
+                <i class="bi bi-arrow-clockwise"></i>
+                <span class="d-none d-sm-inline">Обновить цены</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Таблица предметов -->
+<div class="table-responsive">
+    <table class="table table-excel mb-0" id="priceItemsTable" data-current-sort="{{ sort_by }}">
+        <thead>
+            <tr>
+                <th style="width: 50px;" class="text-center">#</th>
+                <th style="width: 400px;" class="sortable" data-sort="name">
+                    <i class="bi bi-tag me-1"></i>
+                    Название
+                    <span class="sort-icon">{% if sort_by == 'name' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-name' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
+                </th>
+                <th style="width: 200px;">
+                    <i class="bi bi-currency-dollar me-1"></i>
+                    AVG цена за сутки
+                </th>
+                <th style="width: 100px;" class="text-center">
+                    <i class="bi bi-trash" title="Удалить"></i>
+                </th>
+            </tr>
+        </thead>
+        <tbody id="priceItemsBody">
+            {% for item in items %}
+            <tr data-item-id="{{ item.id }}">
+                <td class="text-center text-secondary">{{ forloop.counter }}</td>
+                <td class="copy-on-click" data-field="name" title="Клик — копировать">
+                    <span class="display-value">{{ item.name }}</span>
+                </td>
+                <td class="price-cell">
+                    {% if item.price_24h %}
+                    <span class="price-value">{{ item.price_24h|format_price }}</span>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-danger delete-btn" data-item-id="{{ item.id }}" title="Удалить предмет">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="text-center py-5">
+                    <i class="bi bi-inbox display-4 d-block mb-3" style="color: var(--text-secondary);"></i>
+                    <span style="color: var(--text-primary);">Нет предметов для анализа цен</span>
+                    <p class="text-muted mt-2">Нажмите кнопку "Добавить" чтобы добавить первый предмет</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- ==================== МОДАЛЬНЫЕ ОКНА ==================== -->
+
+<!-- Модальное окно добавления предмета -->
+<div class="modal fade" id="addPriceItemModal" tabindex="-1" aria-labelledby="addPriceItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="addPriceItemForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPriceItemModalLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Новый предмет
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="addPriceItemName">
+                            <i class="bi bi-tag me-1"></i>Название предмета
+                        </label>
+                        <input type="text" name="name" id="addPriceItemName" class="form-control" placeholder="Введите название предмета" required autofocus>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Отмена
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle me-1"></i>Добавить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно подтверждения удаления -->
+<div class="modal fade" id="deletePriceItemModal" tabindex="-1" aria-labelledby="deletePriceItemModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deletePriceItemModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Подтверждение удаления
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">
+                    <i class="bi bi-question-circle me-2"></i>
+                    Вы уверены, что хотите удалить этот предмет из анализа цен?
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Отмена
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeletePriceBtn">
+                    <i class="bi bi-trash me-1"></i>Удалить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Индикатор загрузки -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-labelledby="loadingModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center py-4">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mb-0" id="loadingText">Обновление цен...</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'items/js/price_analytics.js' %}?v=9"></script>
+{% endblock %}
