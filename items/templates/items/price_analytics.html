@@ -31,7 +31,7 @@
             </button>
             <button type="button" class="btn btn-primary" id="refreshPricesBtn">
                 <i class="bi bi-arrow-clockwise"></i>
-                <span class="d-none d-sm-inline">Обновить цены</span>
+                <span class="d-none d-sm-inline">Обновить данные</span>
             </button>
         </div>
     </div>
@@ -39,18 +39,29 @@
 
 <!-- Таблица предметов -->
 <div class="table-responsive">
-    <table class="table table-excel mb-0" id="priceItemsTable" data-current-sort="{{ sort_by }}">
+    <table class="table table-excel mb-0" id="priceItemsTable" data-current-sort="{{ sort_by }}" data-page="price-analytics">
         <thead>
             <tr>
                 <th style="width: 50px;" class="text-center">#</th>
-                <th style="width: 400px;" class="sortable" data-sort="name">
+                <th style="width: 350px;" class="sortable" data-sort="name">
                     <i class="bi bi-tag me-1"></i>
                     Название
                     <span class="sort-icon">{% if sort_by == 'name' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-name' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th style="width: 200px;">
+                <th style="width: 220px;" class="sortable" data-sort="price_24h">
                     <i class="bi bi-currency-dollar me-1"></i>
-                    AVG цена за сутки
+                    СРЕДНЯЯ ЦЕНА ПРОДАЖИ ЗА СУТКИ
+                    <span class="sort-icon">{% if sort_by == 'price_24h' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-price_24h' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
+                </th>
+                <th style="width: 200px;" class="sortable" data-sort="price_with_commission">
+                    <i class="bi bi-percent me-1"></i>
+                    ЦЕНА С КОМИССИЕЙ
+                    <span class="sort-icon">{% if sort_by == 'price_with_commission' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-price_with_commission' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
+                </th>
+                <th style="width: 150px;" class="sortable text-center" data-sort="amount_24h">
+                    <i class="bi bi-hash me-1"></i>
+                    Кол-во продаж за сутки
+                    <span class="sort-icon">{% if sort_by == 'amount_24h' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-amount_24h' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
                 <th style="width: 100px;" class="text-center">
                     <i class="bi bi-trash" title="Удалить"></i>
@@ -61,7 +72,7 @@
             {% for item in items %}
             <tr data-item-id="{{ item.id }}">
                 <td class="text-center text-secondary">{{ forloop.counter }}</td>
-                <td class="copy-on-click" data-field="name" title="Клик — копировать">
+                <td class="copy-on-click" data-field="name" data-page="price-analytics" title="Клик — копировать">
                     <span class="display-value">{{ item.name }}</span>
                 </td>
                 <td class="price-cell">
@@ -69,6 +80,20 @@
                     <span class="price-value">{{ item.price_24h|format_price }}</span>
                     {% else %}
                     <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td class="price-cell">
+                    {% if item.price_with_commission %}
+                    <span class="price-value">{{ item.price_with_commission|format_price }}</span>
+                    {% else %}
+                    <span class="text-muted">N/A</span>
+                    {% endif %}
+                </td>
+                <td class="text-center">
+                    {% if item.amount_24h %}
+                    <span>{{ item.amount_24h|floatformat:0 }}</span>
+                    {% else %}
+                    <span class="text-muted">0</span>
                     {% endif %}
                 </td>
                 <td class="text-center">
@@ -79,7 +104,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="4" class="text-center py-5">
+                <td colspan="6" class="text-center py-5">
                     <i class="bi bi-inbox display-4 d-block mb-3" style="color: var(--text-secondary);"></i>
                     <span style="color: var(--text-primary);">Нет предметов для анализа цен</span>
                     <p class="text-muted mt-2">Нажмите кнопку "Добавить" чтобы добавить первый предмет</p>
@@ -169,5 +194,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'items/js/price_analytics.js' %}?v=9"></script>
+<script src="{% static 'items/js/price_analytics.js' %}?v=13"></script>
 {% endblock %}

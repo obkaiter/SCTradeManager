@@ -47,6 +47,10 @@ function initCopyOnClick() {
 
     document.addEventListener('click', function(e) {
         const cell = e.target.closest('.copy-on-click[data-field="name"]');
+        // Игнорируем ячейки из страницы аналитики цен
+        if (cell && cell.dataset.page === 'price-analytics') {
+            return;
+        }
         if (cell && !e.target.classList.contains('edit-input')) {
             e.preventDefault();
             e.stopPropagation();
