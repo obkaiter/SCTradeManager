@@ -81,6 +81,7 @@ class PriceItem(models.Model):
     """Модель для хранения предметов в аналитике цен."""
     name = models.CharField("Название предмета", max_length=255, db_index=True, unique=True)
     price_24h = models.IntegerField("Цена за сутки", null=True, blank=True)
+    amount_24h = models.IntegerField("Количество продаж за сутки", null=True, blank=True)
     created_at = models.DateTimeField("Дата добавления", auto_now_add=True)
     updated_at = models.DateTimeField("Дата обновления", auto_now=True)
 

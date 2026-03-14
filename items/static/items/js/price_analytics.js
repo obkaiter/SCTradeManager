@@ -32,7 +32,7 @@
      */
     function initCopyOnClick() {
     document.addEventListener('click', function(e) {
-        const cell = e.target.closest('.copy-on-click[data-field="name"]');
+        const cell = e.target.closest('.copy-on-click[data-field="name"][data-page="price-analytics"]');
         if (cell && !e.target.classList.contains('edit-input')) {
             e.preventDefault();
             e.stopPropagation();

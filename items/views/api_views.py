@@ -264,6 +264,7 @@ def price_analytics(request):
     """Страница аналитики цен."""
     from django.utils import timezone
     from datetime import timedelta
+    import math
     
     # Получаем параметры фильтра из запроса
     date_from = request.GET.get('date_from', '')
@@ -279,14 +280,43 @@ def price_analytics(request):
         date_to = timezone.now().date().isoformat()
     
     # Сортировка
-    valid_sort_fields = ['name', '-name']
+    valid_sort_fields = ['name', '-name', 'price_24h', '-price_24h', 'amount_24h', '-amount_24h', 'price_with_commission', '-price_with_commission']
     if sort_by not in valid_sort_fields:
         sort_by = 'name'
     
-    items = PriceItem.objects.all().order_by(sort_by)
+    # Для price_24h и amount_24h используем NULLS LAST чтобы предметы без данных были в конце
+    if sort_by == 'price_24h':
+        items = PriceItem.objects.all().order_by('price_24h')
+    elif sort_by == '-price_24h':
+        items = PriceItem.objects.all().order_by('-price_24h')
+    elif sort_by == 'amount_24h':
+        items = PriceItem.objects.all().order_by('amount_24h')
+    elif sort_by == '-amount_24h':
+        items = PriceItem.objects.all().order_by('-amount_24h')
+    elif sort_by == 'price_with_commission':
+        items = PriceItem.objects.all().order_by('price_24h')
+    elif sort_by == '-price_with_commission':
+        items = PriceItem.objects.all().order_by('-price_24h')
+    else:
+        items = PriceItem.objects.all().order_by(sort_by)
+    
+    # Добавляем цену с комиссией для каждого предмета
+    items_with_commission = []
+    for item in items:
+        item_data = {
+            'id': item.id,
+            'name': item.name,
+            'price_24h': item.price_24h,
+            'amount_24h': item.amount_24h,
+            'price_with_commission': None,
+        }
+        if item.price_24h:
+            # Цена с комиссией = цена * 0.95, округление в большую сторону
+            item_data['price_with_commission'] = math.ceil(item.price_24h * 0.95)
+        items_with_commission.append(item_data)
     
     return render(request, 'items/price_analytics.html', {
-        'items': items,
+        'items': items_with_commission,
         'date_from': date_from,
         'date_to': date_to,
         'hide_sold': hide_sold,
@@ -340,28 +370,29 @@ def price_item_refresh(request):
                 'failed': [],
                 'message': 'Нет предметов для обновления'
             })
-        
+
         updated_count = 0
         failed_items = []
-        
+
         for item in items:
             try:
-                price = PriceCheckService.get_price_24h(item.name)
+                price, amount = PriceCheckService.get_price_24h(item.name)
                 if price is not None:
                     item.price_24h = price
+                    item.amount_24h = amount if amount else 0
                     item.save()
                     updated_count += 1
                 else:
                     failed_items.append(item.name)
             except Exception as e:
                 failed_items.append(item.name)
-        
+
         return JsonResponse({
             'success': True,
             'updated': updated_count,
             'failed': failed_items,
             'total': len(items)
         })
-        
+
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)

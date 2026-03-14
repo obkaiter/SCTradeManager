@@ -339,19 +339,19 @@ class PriceCheckService:
             return None
 
     @staticmethod
-    def get_price_24h(item_name: str) -> int | None:
+    def get_price_24h(item_name: str) -> tuple:
         """
-        Получает цену предмета за сутки с сайта stagnate.ru.
+        Получает цену и количество продаж предмета за сутки с сайта stagnate.ru.
 
         Args:
             item_name: Название предмета
 
         Returns:
-            Цена за сутки (число) или None если не найдено
+            Кортеж (price_24h, amount_24h) или (None, None) если не найдено
         """
         json_data = PriceCheckService._fetch_api_data()
         if not json_data:
-            return None
+            return None, None
 
         item_name_lower = item_name.lower()
 
@@ -363,7 +363,7 @@ class PriceCheckService:
 
             # Точное совпадение названия
             if name.lower() == item_name_lower:
-                return item.get('hours_024_median')
+                return item.get('hours_024_median'), item.get('hours_024_amount')
 
         # Если точное совпадение не найдено, ищем частичное
         for item in json_data:
@@ -372,9 +372,9 @@ class PriceCheckService:
 
             name = item.get('name', '')
             if item_name_lower in name.lower():
-                return item.get('hours_024_median')
+                return item.get('hours_024_median'), item.get('hours_024_amount')
 
-        return None
+        return None, None
 
     @staticmethod
     def get_all_prices(item_names: list) -> dict:
