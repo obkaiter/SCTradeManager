@@ -112,9 +112,9 @@ function copyItemName(cell) {
  * Инициализация редактируемых ячеек
  */
 function initEditableCells(cells) {
-    // Инициализация подсказок для всех ячеек purchase_price
-    document.querySelectorAll('.price-cell[data-field="purchase_price"]').forEach(cell => {
-        updateAveragePriceTooltip(cell);
+    // Инициализация подсказок для цен
+    document.querySelectorAll('.price-cell[data-field="purchase_price"], .price-cell[data-field="sale_price"]').forEach(cell => {
+        updatePriceCellTooltip(cell);
     });
 
     cells.forEach(cell => {
@@ -124,9 +124,9 @@ function initEditableCells(cells) {
 
         if (!displayValue || !editInput) return;
 
-        if (field === 'purchase_price') {
+        if (field === 'purchase_price' || field === 'sale_price') {
             cell.addEventListener('mouseenter', function() {
-                updateAveragePriceTooltip(cell);
+                updatePriceCellTooltip(cell);
                 if (cell.getAttribute('data-tooltip')) {
                     showCustomTooltip(cell);
                 }
@@ -444,9 +444,9 @@ function updateCellDisplay(cell, row, field, data, newValue) {
         displayValue.textContent = numValue.toLocaleString('ru-RU') + ' ₽';
         if (editInput) editInput.value = numValue.toLocaleString('ru-RU') + ' ₽';
         updateProfitCell(row, field, numValue, data, newValue);
-        // Обновляем подсказку средней цены при изменении цены покупки
-        if (field === 'purchase_price') {
-            updateAveragePriceTooltip(cell);
+        // Обновляем подсказку цены при изменении покупки или продажи
+        updatePriceCellTooltip(cell);
+        if (field === 'purchase_price' || field === 'sale_price') {
             if (cell.getAttribute('data-tooltip')) {
                 hideCustomTooltip();
                 showCustomTooltip(cell);
@@ -468,11 +468,15 @@ function updateCellDisplay(cell, row, field, data, newValue) {
         // Обновляем подсказку средней цены при изменении количества
         const purchasePriceCell = row.querySelector('[data-field="purchase_price"]');
         if (purchasePriceCell) {
-            updateAveragePriceTooltip(purchasePriceCell);
+            updatePriceCellTooltip(purchasePriceCell);
             if (purchasePriceCell.getAttribute('data-tooltip')) {
                 hideCustomTooltip();
                 showCustomTooltip(purchasePriceCell);
             }
+        }
+        const salePriceCell = row.querySelector('[data-field="sale_price"]');
+        if (salePriceCell) {
+            updatePriceCellTooltip(salePriceCell);
         }
     } else {
         displayValue.textContent = data.value || '';
@@ -574,6 +578,19 @@ function getSalePrice(row) {
 }
 
 /**
+ * Обновить всплывающую подсказку для ячейки цены
+ */
+function updatePriceCellTooltip(cell) {
+    if (!cell) return;
+
+    if (cell.dataset.field === 'purchase_price') {
+        updateAveragePriceTooltip(cell);
+    } else if (cell.dataset.field === 'sale_price') {
+        updateSaleUnitProfitTooltip(cell);
+    }
+}
+
+/**
  * Обновить всплывающую подсказку средней цены для ячейки purchase_price
  */
 function updateAveragePriceTooltip(cell) {
@@ -597,6 +614,31 @@ function updateAveragePriceTooltip(cell) {
 }
 
 /**
+ * Обновить всплывающую подсказку прибыли за штуку для ячейки sale_price
+ */
+function updateSaleUnitProfitTooltip(cell) {
+    if (cell.dataset.field !== 'sale_price') return;
+
+    const row = cell.closest('tr');
+    const quantityDisplay = row?.querySelector('[data-field="quantity"] .display-value');
+    const purchasePriceDisplay = row?.querySelector('[data-field="purchase_price"] .display-value');
+    const salePriceDisplay = cell.querySelector('.display-value');
+
+    if (!quantityDisplay || !purchasePriceDisplay || !salePriceDisplay) return;
+
+    const quantity = parseInt(quantityDisplay.textContent) || 1;
+    const purchasePrice = parseInt(parsePrice(purchasePriceDisplay.textContent)) || 0;
+    const salePrice = parseInt(parsePrice(salePriceDisplay.textContent)) || 0;
+
+    if (salePrice > 0) {
+        const unitProfit = Math.round((salePrice / quantity) - (purchasePrice / quantity)).toLocaleString('ru-RU');
+        cell.setAttribute('data-tooltip', `Прибыль (шт.): ${unitProfit} руб.`);
+    } else {
+        cell.removeAttribute('data-tooltip');
+    }
+}
+
+/**
  * Показать кастомную всплывающую подсказку
  */
 function showCustomTooltip(cell) {
@@ -604,7 +646,7 @@ function showCustomTooltip(cell) {
     if (tooltip) return; // Уже показана
 
     if (!cell) {
-        cell = document.querySelector('.price-cell[data-field="purchase_price"]:hover');
+        cell = document.querySelector('.price-cell[data-tooltip]:hover');
         if (!cell) return;
     }
 

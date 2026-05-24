@@ -327,6 +327,11 @@ function initAddItemForm() {
         if (purchaseDateInput) {
             purchaseDateInput.value = today;
         }
+        // Устанавливаем значение по умолчанию для дублирования
+        const duplicateInput = document.getElementById('addItemDuplicate');
+        if (duplicateInput) {
+            duplicateInput.value = '0';
+        }
         // Очищаем форму
         const addItemForm = document.getElementById('addItemForm');
         if (addItemForm) {
@@ -345,6 +350,11 @@ function initAddItemForm() {
             if (purchaseDateInput) {
                 purchaseDateInput.value = today;
             }
+            // Сбрасываем значение дублирования
+            const duplicateInput = document.getElementById('addItemDuplicate');
+            if (duplicateInput) {
+                duplicateInput.value = '0';
+            }
         }
     });
 }
@@ -359,6 +369,20 @@ function initAddItemSubmit() {
     addItemForm.addEventListener('submit', function(e) {
         e.preventDefault();
         const formData = new FormData(this);
+
+        // Убедимся, что значение дублирования передаётся
+        const duplicateInput = document.getElementById('addItemDuplicate');
+        if (duplicateInput) {
+            formData.set('duplicate', duplicateInput.value);
+            console.log('Duplicate value sent:', duplicateInput.value);
+        } else {
+            console.log('Duplicate input not found!');
+        }
+
+        // Логируем все данные формы
+        for (var pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
 
         const purchasePriceInput = document.getElementById('addItemPurchasePrice');
         const salePriceInput = document.getElementById('addItemSalePrice');
@@ -391,7 +415,13 @@ function initAddItemSubmit() {
                 const modal = bootstrap.Modal.getInstance(document.getElementById('addItemModal'));
                 if (modal) modal.hide();
                 
-                showToast('Предмет успешно добавлен', 'success');
+                // Показываем уведомление с учётом количества созданных предметов
+                const itemsCount = data.items_count || 1;
+                if (itemsCount > 1) {
+                    showToast(`Предмет успешно добавлен (создано ${itemsCount} шт.)`, 'success');
+                } else {
+                    showToast('Предмет успешно добавлен', 'success');
+                }
                 
                 // Перезагружаем страницу с сохранением текущих параметров фильтра
                 setTimeout(() => {
