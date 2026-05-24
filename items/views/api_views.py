@@ -22,24 +22,52 @@ def add_item(request):
     """Добавление нового предмета (AJAX)."""
     form = ItemForm(request.POST)
 
+    # Отладка: выводим все POST-данные
+    print("POST data:", request.POST)
+    print("duplicate value:", request.POST.get('duplicate'))
+
     if form.is_valid():
-        item = form.save(commit=False)
-        if not item.purchase_date:
-            item.purchase_date = timezone.now().date()
-        if not item.quantity:
-            item.quantity = 1
-        item.save()
+        # Получаем значение продублирования лота
+        duplicate_count = int(request.POST.get('duplicate', 0))
+        print("duplicate_count:", duplicate_count)
+        if duplicate_count < 0:
+            duplicate_count = 0
+        
+        # Ограничим максимальное количество дубликатов для безопасности
+        if duplicate_count > 100:
+            duplicate_count = 100
+        
+        created_items = []
+        
+        # Создаём оригинальный предмет
+        item = form.save()
+        created_items.append(item)
+        
+        # Создаём дубликаты путём копирования
+        for i in range(duplicate_count):
+            # Создаём новый объект на основе первого
+            new_item = Item(
+                name=item.name,
+                purchase_price=item.purchase_price,
+                sale_price=item.sale_price,
+                purchase_date=item.purchase_date,
+                sale_date=item.sale_date,
+                quantity=item.quantity
+            )
+            new_item.save()
+            created_items.append(new_item)
 
         return JsonResponse({
             'success': True,
+            'items_count': len(created_items),
             'item': {
-                'id': item.id,
-                'name': item.name,
-                'purchase_price': item.purchase_price,
-                'sale_price': item.sale_price,
-                'purchase_date': item.purchase_date.isoformat() if item.purchase_date else None,
-                'sale_date': item.sale_date.isoformat() if item.sale_date else None,
-                'quantity': item.quantity,
+                'id': created_items[0].id,
+                'name': created_items[0].name,
+                'purchase_price': created_items[0].purchase_price,
+                'sale_price': created_items[0].sale_price,
+                'purchase_date': created_items[0].purchase_date.isoformat() if created_items[0].purchase_date else None,
+                'sale_date': created_items[0].sale_date.isoformat() if created_items[0].sale_date else None,
+                'quantity': created_items[0].quantity,
             }
         })
 
