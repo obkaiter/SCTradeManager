@@ -631,8 +631,9 @@ function updateSaleUnitProfitTooltip(cell) {
     const salePrice = parseInt(parsePrice(salePriceDisplay.textContent)) || 0;
 
     if (salePrice > 0) {
+        const unitSalePrice = Math.round(salePrice / quantity).toLocaleString('ru-RU');
         const unitProfit = Math.round((salePrice / quantity) - (purchasePrice / quantity)).toLocaleString('ru-RU');
-        cell.setAttribute('data-tooltip', `Прибыль (шт.): ${unitProfit} руб.`);
+        cell.setAttribute('data-tooltip', `Цена продажи (шт): ${unitSalePrice} руб.\nПрибыль (шт.): ${unitProfit} руб.`);
     } else {
         cell.removeAttribute('data-tooltip');
     }
@@ -667,7 +668,7 @@ function showCustomTooltip(cell) {
         font-size: 13px;
         font-weight: 500;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        white-space: nowrap;
+        white-space: pre-line;
         left: ${lastMouseX}px;
         top: ${lastMouseY + 10}px;
     `;
