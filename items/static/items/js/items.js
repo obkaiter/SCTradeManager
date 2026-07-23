@@ -784,12 +784,10 @@ function openAddPriceModal(cell) {
         newQuantitySpan.textContent = currentQuantity + addQuantity;
     };
 
-    amountInput.removeEventListener('input', updateNewValues);
-    amountInput.addEventListener('input', updateNewValues);
-    quantityInput.removeEventListener('input', updateNewValues);
-    quantityInput.addEventListener('input', updateNewValues);
+    amountInput.oninput = updateNewValues;
+    quantityInput.oninput = updateNewValues;
 
-    const bsModal = new bootstrap.Modal(modal);
+    const bsModal = bootstrap.Modal.getOrCreateInstance(modal);
 
     const handleConfirm = () => {
         const addAmount = parseInt(parsePrice(amountInput.value)) || 0;
@@ -851,7 +849,6 @@ function openAddPriceModal(cell) {
             });
     };
 
-    confirmBtn.removeEventListener('click', handleConfirm);
-    confirmBtn.addEventListener('click', handleConfirm);
+    confirmBtn.onclick = handleConfirm;
     bsModal.show();
 }
