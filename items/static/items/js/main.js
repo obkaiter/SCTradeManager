@@ -99,6 +99,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Добавление предмета
     initAddItemSubmit();
 
+    // Объединение открытых лотов
+    initMergeItems();
+
     // Обновление кнопки фильтра при загрузке
     updateFilterButtonLabels();
 
@@ -440,6 +443,75 @@ function initAddItemSubmit() {
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Добавить';
+            }
+        });
+    });
+}
+
+/**
+ * Инициализация формы объединения открытых лотов.
+ */
+function initMergeItems() {
+    const mergeModalElement = document.getElementById('mergeItemsModal');
+    const mergeForm = document.getElementById('mergeItemsForm');
+    const nameInput = document.getElementById('mergeItemName');
+
+    if (!mergeModalElement || !mergeForm || !nameInput) return;
+
+    mergeModalElement.addEventListener('shown.bs.modal', function() {
+        nameInput.focus();
+    });
+
+    mergeModalElement.addEventListener('hidden.bs.modal', function() {
+        mergeForm.reset();
+    });
+
+    mergeForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const formData = new FormData(mergeForm);
+        const submitBtn = mergeForm.querySelector('button[type="submit"]');
+
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Объединение...';
+        }
+
+        fetch('/items/merge/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken'),
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(async response => {
+            const data = await response.json();
+            if (!response.ok) {
+                throw new Error(data.error || 'Не удалось объединить лоты');
+            }
+            return data;
+        })
+        .then(data => {
+            const modal = bootstrap.Modal.getInstance(mergeModalElement);
+            if (modal) modal.hide();
+
+            showToast(
+                `Объединено лотов: ${data.items_count}. Количество в новом лоте: ${data.item.quantity}`,
+                'success'
+            );
+
+            setTimeout(() => {
+                window.location.href = window.location.pathname + window.location.search;
+            }, 500);
+        })
+        .catch(error => {
+            showToast(error.message || 'Ошибка при объединении лотов', 'error');
+        })
+        .finally(() => {
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-layers me-1"></i>Объединить';
             }
         });
     });

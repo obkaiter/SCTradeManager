@@ -18,6 +18,57 @@ from items.services import ItemService, ExpenseService, PriceCheckService
 
 
 @require_POST
+def merge_items(request):
+    """Объединение открытых лотов с заданным названием за выбранный период."""
+    name = request.POST.get('name', '').strip()
+    date_from = request.POST.get('date_from', '')
+    date_to = request.POST.get('date_to', '')
+
+    if not name:
+        return JsonResponse({'error': 'Укажите название предмета.'}, status=400)
+    if len(name) > Item._meta.get_field('name').max_length:
+        return JsonResponse({'error': 'Название предмета слишком длинное.'}, status=400)
+
+    try:
+        date_from_obj = datetime.strptime(date_from, '%Y-%m-%d').date()
+        date_to_obj = datetime.strptime(date_to, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        return JsonResponse({'error': 'Укажите корректный период.'}, status=400)
+
+    if date_from_obj > date_to_obj:
+        return JsonResponse(
+            {'error': 'Начальная дата периода не может быть позже конечной.'},
+            status=400,
+        )
+
+    merged_item, merged_count = ItemService.merge_open_items(
+        name,
+        date_from_obj,
+        date_to_obj,
+    )
+
+    if merged_item is None:
+        message = (
+            'Лоты с таким названием за выбранный период не найдены.'
+            if merged_count == 0
+            else 'За выбранный период найден только один открытый лот.'
+        )
+        return JsonResponse({'error': message, 'items_count': merged_count}, status=400)
+
+    return JsonResponse({
+        'success': True,
+        'items_count': merged_count,
+        'item': {
+            'id': merged_item.pk,
+            'name': merged_item.name,
+            'purchase_price': merged_item.purchase_price,
+            'purchase_date': merged_item.purchase_date.isoformat(),
+            'quantity': merged_item.quantity,
+        },
+    })
+
+
+@require_POST
 def add_item(request):
     """Добавление нового предмета (AJAX)."""
     form = ItemForm(request.POST)

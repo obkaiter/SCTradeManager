@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 from datetime import date, timedelta
 from items.models import Item, Expense
@@ -94,7 +95,7 @@ class ItemServiceTest(TestCase):
     def test_get_items_filtered_by_date(self):
         """Тест фильтрации по дате."""
         items = ItemService.get_items_filtered(date_from=self.today)
-        self.assertEqual(items.count(), 2)
+        self.assertEqual(items.count(), 3)
 
     def test_get_items_hide_sold(self):
         """Тест скрытия проданных."""
@@ -141,6 +142,123 @@ class ItemServiceTest(TestCase):
         self.assertTrue(success)
         item.refresh_from_db()
         self.assertIsNone(item.sale_price)
+
+    def test_merge_open_items_in_period(self):
+        """Открытые лоты объединяются, остальные записи не изменяются."""
+        target_name = 'Объединяемый предмет'
+        first = Item.objects.create(
+            name=target_name,
+            purchase_price=1200,
+            purchase_date=self.yesterday,
+            quantity=2,
+        )
+        second = Item.objects.create(
+            name=target_name.lower(),
+            purchase_price=800,
+            purchase_date=self.today,
+            quantity=3,
+        )
+        sold = Item.objects.create(
+            name=target_name,
+            purchase_price=500,
+            sale_price=700,
+            purchase_date=self.today,
+            sale_date=self.today,
+            quantity=1,
+        )
+        outside_period = Item.objects.create(
+            name=target_name,
+            purchase_price=400,
+            purchase_date=self.yesterday - timedelta(days=10),
+            quantity=4,
+        )
+        similar_name = Item.objects.create(
+            name=f'{target_name} улучшенный',
+            purchase_price=900,
+            purchase_date=self.today,
+            quantity=1,
+        )
+
+        merged_item, merged_count = ItemService.merge_open_items(
+            target_name,
+            self.yesterday,
+            self.today,
+        )
+
+        self.assertEqual(merged_count, 2)
+        self.assertEqual(merged_item.name, target_name)
+        self.assertEqual(merged_item.purchase_price, 2000)
+        self.assertEqual(merged_item.quantity, 5)
+        self.assertEqual(merged_item.purchase_date, self.today)
+        self.assertIsNone(merged_item.sale_price)
+        self.assertIsNone(merged_item.sale_date)
+        self.assertFalse(Item.objects.filter(pk__in=[first.pk, second.pk]).exists())
+        self.assertTrue(Item.objects.filter(pk=sold.pk).exists())
+        self.assertTrue(Item.objects.filter(pk=outside_period.pk).exists())
+        self.assertTrue(Item.objects.filter(pk=similar_name.pk).exists())
+
+    def test_merge_open_items_requires_at_least_two_lots(self):
+        """Один найденный лот не пересоздаётся."""
+        only_item = Item.objects.create(
+            name='Единственный предмет',
+            purchase_price=100,
+            purchase_date=self.today,
+            quantity=1,
+        )
+
+        merged_item, merged_count = ItemService.merge_open_items(
+            only_item.name,
+            self.today,
+            self.today,
+        )
+
+        self.assertIsNone(merged_item)
+        self.assertEqual(merged_count, 1)
+        self.assertTrue(Item.objects.filter(pk=only_item.pk).exists())
+
+
+class MergeItemsViewTest(TestCase):
+    """Тесты API объединения лотов."""
+
+    def setUp(self):
+        self.today = timezone.now().date()
+        self.url = reverse('items:merge_items')
+
+    def test_merge_items(self):
+        Item.objects.create(
+            name='Артефакт',
+            purchase_price=100,
+            purchase_date=self.today,
+            quantity=2,
+        )
+        Item.objects.create(
+            name='Артефакт',
+            purchase_price=250,
+            purchase_date=self.today,
+            quantity=4,
+        )
+
+        response = self.client.post(self.url, {
+            'name': 'Артефакт',
+            'date_from': self.today.isoformat(),
+            'date_to': self.today.isoformat(),
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['items_count'], 2)
+        merged_item = Item.objects.get(name='Артефакт')
+        self.assertEqual(merged_item.purchase_price, 350)
+        self.assertEqual(merged_item.quantity, 6)
+
+    def test_merge_items_rejects_invalid_period(self):
+        response = self.client.post(self.url, {
+            'name': 'Артефакт',
+            'date_from': 'invalid-date',
+            'date_to': self.today.isoformat(),
+        })
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('error', response.json())
 
 
 class ExpenseServiceTest(TestCase):
