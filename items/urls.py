@@ -2,6 +2,7 @@ from django.urls import path
 from items.views import (
     item_list,
     add_item,
+    merge_items,
     update_item,
     delete_item,
     expense_list,
@@ -24,6 +25,7 @@ urlpatterns = [
     path('analytics/', analytics, name='analytics'),
     path('price-analytics/', price_analytics, name='price_analytics'),
     path('add/', add_item, name='add_item'),
+    path('merge/', merge_items, name='merge_items'),
     path('<int:pk>/update/', update_item, name='update_item'),
     path('<int:pk>/delete/', delete_item, name='delete_item'),
     path('expenses/', expense_list, name='expense_list'),

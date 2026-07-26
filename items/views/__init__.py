@@ -4,6 +4,7 @@
 from .items_views import item_list, analytics
 from .api_views import (
     add_item,
+    merge_items,
     update_item,
     delete_item,
     flesh_prices,
@@ -24,6 +25,7 @@ __all__ = [
     'item_list',
     'analytics',
     'add_item',
+    'merge_items',
     'update_item',
     'delete_item',
     'flesh_prices',

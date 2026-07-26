@@ -42,6 +42,10 @@
                 <i class="bi bi-plus-circle"></i>
                 <span class="d-none d-sm-inline">Мякоть</span>
             </button>
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#mergeItemsModal">
+                <i class="bi bi-layers"></i>
+                <span class="d-none d-sm-inline">Объединить</span>
+            </button>
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
                 <i class="bi bi-plus-lg"></i>
                 <span class="d-none d-sm-inline">Добавить</span>
@@ -187,6 +191,41 @@
 </div>
 
 <!-- ==================== МОДАЛЬНЫЕ ОКНА ==================== -->
+
+<!-- Модальное окно объединения лотов -->
+<div class="modal fade" id="mergeItemsModal" tabindex="-1" aria-labelledby="mergeItemsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="mergeItemsForm">
+                {% csrf_token %}
+                <input type="hidden" name="date_from" value="{{ date_from|date:'Y-m-d' }}">
+                <input type="hidden" name="date_to" value="{{ date_to|date:'Y-m-d' }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="mergeItemsModalLabel">
+                        <i class="bi bi-layers me-2"></i>Объединить лоты
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="mergeItemName">
+                            <i class="bi bi-tag me-1"></i>Название
+                        </label>
+                        <input type="text" name="name" id="mergeItemName" class="form-control" placeholder="Введите точное название" maxlength="255" required autofocus>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Отмена
+                    </button>
+                    <button type="submit" class="btn btn-info">
+                        <i class="bi bi-layers me-1"></i>Объединить
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <!-- Модальное окно добавления предмета -->
 <div class="modal fade" id="addItemModal" tabindex="-1" aria-labelledby="addItemModalLabel" aria-hidden="true">

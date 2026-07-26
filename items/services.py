@@ -1,6 +1,7 @@
 """
 Сервисный слой для бизнес-логики предметов и расходов.
 """
+from django.db import transaction
 from django.db.models import Q, Sum, F
 from django.core.cache import cache
 from django.conf import settings
@@ -12,6 +13,47 @@ from items.models import Item, Expense
 
 class ItemService:
     """Сервис для работы с предметами."""
+
+    @staticmethod
+    @transaction.atomic
+    def merge_open_items(name, date_from, date_to):
+        """
+        Объединить открытые лоты с одинаковым названием за период.
+
+        Открытым считается лот без даты продажи. Цена покупки и количество
+        складываются, а датой покупки становится самая поздняя дата из выборки.
+        """
+        normalized_name = name.strip()
+        candidates = list(
+            Item.objects.select_for_update().filter(
+                sale_date__isnull=True,
+                purchase_date__gte=date_from,
+                purchase_date__lte=date_to,
+            ).order_by('pk')
+        )
+        normalized_name_key = normalized_name.casefold()
+        items = [
+            item for item in candidates
+            if item.name.strip().casefold() == normalized_name_key
+        ]
+
+        if len(items) < 2:
+            return None, len(items)
+
+        total_purchase_price = sum(item.purchase_price for item in items)
+        total_quantity = sum(item.quantity for item in items)
+        latest_purchase_date = max(item.purchase_date for item in items)
+        item_ids = [item.pk for item in items]
+
+        Item.objects.filter(pk__in=item_ids).delete()
+        merged_item = Item.objects.create(
+            name=normalized_name,
+            purchase_price=total_purchase_price,
+            purchase_date=latest_purchase_date,
+            quantity=total_quantity,
+        )
+
+        return merged_item, len(items)
 
     @staticmethod
     def get_items_filtered(date_from=None, date_to=None, hide_sold=False, name_filter=''):
