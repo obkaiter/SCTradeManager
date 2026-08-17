@@ -97,10 +97,10 @@
 
 <!-- Таблица предметов -->
 <div class="table-responsive mb-4">
-    <table class="table table-excel mb-0" data-current-sort="{{ sort_by }}">
+    <table class="table table-excel mb-0" id="itemsTable" data-current-sort="{{ sort_by }}">
         <thead>
             <tr>
-                <th style="width: 50px;" class="text-center">#</th>
+                <th style="width: 78px;" class="text-center">#</th>
                 <th class="sortable" data-sort="name" style="width: 200px;">
                     <i class="bi bi-tag me-1"></i>
                     Название
@@ -328,6 +328,9 @@
                     </div>
                 </div>
                 <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="weekBtn">
+                        <i class="bi bi-calendar-week me-1"></i>Неделя
+                    </button>
                     <button type="button" class="btn btn-outline-primary" id="threeDaysBtn">
                         <i class="bi bi-calendar-day me-1"></i>3 дня
                     </button>

@@ -19,7 +19,144 @@ document.addEventListener('mousemove', function(e) {
 document.addEventListener('DOMContentLoaded', function() {
     initContextMenuGlobal();
     initCopyOnClick();
+    initItemGroups();
 });
+
+/**
+ * Группировка строк с одинаковыми названиями в менеджере предметов.
+ */
+function initItemGroups() {
+    const table = document.getElementById('itemsTable');
+    if (!table) return;
+
+    refreshItemGroups();
+
+    table.addEventListener('click', function(e) {
+        const toggleCell = e.target.closest('.group-toggle-cell');
+        if (toggleCell && table.contains(toggleCell)) {
+            toggleItemGroup(toggleCell);
+        }
+    });
+
+    table.addEventListener('keydown', function(e) {
+        const toggleCell = e.target.closest('.group-toggle-cell');
+        if (!toggleCell || !table.contains(toggleCell)) return;
+
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleItemGroup(toggleCell);
+        }
+    });
+}
+
+/**
+ * Перестраивает группы. Вызывается также после переименования предмета.
+ */
+function refreshItemGroups() {
+    const table = document.getElementById('itemsTable');
+    const tbody = table?.tBodies[0];
+    if (!tbody) return;
+
+    const rows = Array.from(tbody.rows).filter(row => row.dataset.itemId);
+    if (rows.length === 0) return;
+
+    const groups = new Map();
+
+    rows.forEach(row => {
+        row.hidden = false;
+        row.classList.remove('item-group-parent', 'item-group-child', 'is-expanded');
+        delete row.dataset.groupId;
+
+        const numberCell = row.cells[0];
+        if (numberCell) {
+            numberCell.classList.remove('group-toggle-cell', 'group-child-number');
+            numberCell.removeAttribute('role');
+            numberCell.removeAttribute('tabindex');
+            numberCell.removeAttribute('aria-expanded');
+            numberCell.removeAttribute('aria-label');
+            numberCell.removeAttribute('title');
+        }
+
+        const name = row.querySelector('[data-field="name"] .display-value')?.textContent.trim() || '';
+        if (!groups.has(name)) groups.set(name, []);
+        groups.get(name).push(row);
+    });
+
+    const fragment = document.createDocumentFragment();
+    let visibleNumber = 1;
+    let groupNumber = 0;
+
+    groups.forEach(groupRows => {
+        const rowNumber = visibleNumber++;
+
+        if (groupRows.length === 1) {
+            groupRows[0].cells[0].textContent = rowNumber;
+            fragment.appendChild(groupRows[0]);
+            return;
+        }
+
+        const groupId = `item-group-${++groupNumber}`;
+        const parentRow = groupRows[0];
+        const toggleCell = parentRow.cells[0];
+
+        parentRow.classList.add('item-group-parent');
+        parentRow.dataset.groupId = groupId;
+        toggleCell.classList.add('group-toggle-cell');
+        toggleCell.setAttribute('role', 'button');
+        toggleCell.setAttribute('tabindex', '0');
+        toggleCell.setAttribute('aria-expanded', 'false');
+        toggleCell.setAttribute('aria-label', `Развернуть группу из ${groupRows.length} предметов`);
+        toggleCell.title = `Развернуть группу (${groupRows.length})`;
+        toggleCell.innerHTML = `
+            <span class="group-toggle-content">
+                <i class="bi bi-chevron-right group-toggle-icon" aria-hidden="true"></i>
+                <span>${rowNumber}</span>
+                <span class="group-size-badge">${groupRows.length}</span>
+            </span>
+        `;
+        fragment.appendChild(parentRow);
+
+        groupRows.slice(1).forEach((row, index) => {
+            row.classList.add('item-group-child');
+            row.dataset.groupId = groupId;
+            row.hidden = true;
+
+            const numberCell = row.cells[0];
+            numberCell.classList.add('group-child-number');
+            numberCell.innerHTML = `<span aria-hidden="true">↳</span> ${rowNumber}.${index + 2}`;
+            fragment.appendChild(row);
+        });
+    });
+
+    tbody.appendChild(fragment);
+}
+
+/**
+ * Сворачивает или разворачивает выбранную группу строк.
+ */
+function toggleItemGroup(toggleCell) {
+    const parentRow = toggleCell.closest('.item-group-parent');
+    const groupId = parentRow?.dataset.groupId;
+    if (!parentRow || !groupId) return;
+
+    const expanded = toggleCell.getAttribute('aria-expanded') === 'true';
+    const nextExpanded = !expanded;
+    const childRows = parentRow.closest('tbody').querySelectorAll(
+        `.item-group-child[data-group-id="${groupId}"]`
+    );
+
+    childRows.forEach(row => {
+        row.hidden = !nextExpanded;
+    });
+
+    parentRow.classList.toggle('is-expanded', nextExpanded);
+    toggleCell.setAttribute('aria-expanded', String(nextExpanded));
+    toggleCell.setAttribute(
+        'aria-label',
+        `${nextExpanded ? 'Свернуть' : 'Развернуть'} группу из ${childRows.length + 1} предметов`
+    );
+    toggleCell.title = `${nextExpanded ? 'Свернуть' : 'Развернуть'} группу (${childRows.length + 1})`;
+}
 
 /**
  * Глобальная инициализация контекстного меню для purchase_price
@@ -225,6 +362,9 @@ function saveCellValue(cell) {
         .then(data => {
             if (data.success) {
                 updateCellDisplay(cell, row, field, data, newValue);
+                if (field === 'name') {
+                    refreshItemGroups();
+                }
                 if (data.financials) {
                     updateFinancialSummary(data.financials);
                 }

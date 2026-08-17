@@ -163,6 +163,9 @@ function updateFilterButtonLabels() {
         const threeDaysAgo = new Date(today);
         threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
 
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+
         // Проверка на "сегодня"
         if (from.getTime() === today.getTime() && to.getTime() === today.getTime()) {
             highlightActiveFilterButton('todayBtn');
@@ -170,6 +173,10 @@ function updateFilterButtonLabels() {
         // Проверка на "3 дня"
         else if (from.getTime() === threeDaysAgo.getTime() && to.getTime() === today.getTime()) {
             highlightActiveFilterButton('threeDaysBtn');
+        }
+        // Проверка на "неделю"
+        else if (from.getTime() === weekAgo.getTime() && to.getTime() === today.getTime()) {
+            highlightActiveFilterButton('weekBtn');
         }
         // Проверка на "всё"
         else if (from.getFullYear() <= 2020 && to.getFullYear() >= 2099) {
@@ -182,7 +189,7 @@ function updateFilterButtonLabels() {
  * Подсветка активной кнопки фильтра
  */
 function highlightActiveFilterButton(activeId) {
-    ['todayBtn', 'threeDaysBtn', 'showAllBtn'].forEach(id => {
+    ['todayBtn', 'threeDaysBtn', 'weekBtn', 'showAllBtn'].forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
             if (id === activeId) {
@@ -222,6 +229,33 @@ function setupDateFilterButtons(hideSoldState) {
             const hideSold = hideSoldState?.value || 'false';
             const nameFilter = document.getElementById('filterNameInput')?.value || '';
             let url = '?date_from=' + today + '&date_to=' + today + '&hide_sold=' + hideSold;
+            if (nameFilter) {
+                url += '&name=' + encodeURIComponent(nameFilter);
+            }
+            window.location.href = url;
+        });
+    }
+
+    const weekBtn = document.getElementById('weekBtn');
+    if (weekBtn) {
+        weekBtn.addEventListener('click', function() {
+            const today = new Date();
+            const weekAgo = new Date(today);
+            weekAgo.setDate(today.getDate() - 7);
+
+            const yearFrom = weekAgo.getFullYear();
+            const monthFrom = String(weekAgo.getMonth() + 1).padStart(2, '0');
+            const dayFrom = String(weekAgo.getDate()).padStart(2, '0');
+            const dateFrom = `${yearFrom}-${monthFrom}-${dayFrom}`;
+
+            const yearTo = today.getFullYear();
+            const monthTo = String(today.getMonth() + 1).padStart(2, '0');
+            const dayTo = String(today.getDate()).padStart(2, '0');
+            const dateTo = `${yearTo}-${monthTo}-${dayTo}`;
+
+            const hideSold = hideSoldState?.value || 'false';
+            const nameFilter = document.getElementById('filterNameInput')?.value || '';
+            let url = '?date_from=' + dateFrom + '&date_to=' + dateTo + '&hide_sold=' + hideSold;
             if (nameFilter) {
                 url += '&name=' + encodeURIComponent(nameFilter);
             }

@@ -245,6 +245,66 @@ h6 { font-size: 14px; }
     white-space: nowrap;
 }
 
+/* Collapsible item groups */
+.group-toggle-cell {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s ease;
+}
+.group-toggle-cell:hover,
+.group-toggle-cell:focus-visible {
+    background-color: rgba(88, 101, 242, 0.22) !important;
+}
+.group-toggle-content {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+}
+.group-toggle-icon {
+    color: var(--accent-blue-light);
+    font-size: 12px;
+    transition: transform 0.15s ease;
+}
+.item-group-parent.is-expanded .group-toggle-icon {
+    transform: rotate(90deg);
+}
+.group-size-badge {
+    min-width: 19px;
+    padding: 1px 5px;
+    border-radius: 10px;
+    background-color: var(--accent-blue);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 16px;
+}
+.table-excel tbody tr.item-group-child[hidden] {
+    display: none !important;
+}
+.table-excel tbody tr.item-group-child td:not(.profit-cell) {
+    background-color: rgba(88, 101, 242, 0.06) !important;
+}
+.table-excel tbody tr.item-group-child:hover td:not(.profit-cell) {
+    background-color: rgba(88, 101, 242, 0.14) !important;
+}
+.group-child-number {
+    color: var(--text-muted) !important;
+    font-size: var(--font-sm) !important;
+}
+.item-group-child td[data-field="name"] .display-value {
+    padding-left: 24px;
+    position: relative;
+}
+.item-group-child td[data-field="name"] .display-value::before {
+    content: '';
+    position: absolute;
+    left: 9px;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid var(--border-light);
+}
+
 /* Buttons */
 .btn {
     border-radius: var(--radius-sm);
