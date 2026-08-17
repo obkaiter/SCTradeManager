@@ -2,7 +2,6 @@ from django.urls import path
 from items.views import (
     item_list,
     add_item,
-    merge_items,
     update_item,
     delete_item,
     expense_list,
@@ -12,10 +11,6 @@ from items.views import (
     analytics,
     flesh_prices,
     add_flesh_items,
-    price_analytics,
-    price_item_create,
-    price_item_delete,
-    price_item_refresh,
 )
 
 app_name = 'items'
@@ -23,9 +18,7 @@ app_name = 'items'
 urlpatterns = [
     path('', item_list, name='item_list'),
     path('analytics/', analytics, name='analytics'),
-    path('price-analytics/', price_analytics, name='price_analytics'),
     path('add/', add_item, name='add_item'),
-    path('merge/', merge_items, name='merge_items'),
     path('<int:pk>/update/', update_item, name='update_item'),
     path('<int:pk>/delete/', delete_item, name='delete_item'),
     path('expenses/', expense_list, name='expense_list'),
@@ -34,7 +27,4 @@ urlpatterns = [
     path('expenses/<int:pk>/delete/', expense_delete, name='expense_delete'),
     path('flesh/prices/', flesh_prices, name='flesh_prices'),
     path('flesh/add/', add_flesh_items, name='add_flesh_items'),
-    path('price-item/create/', price_item_create, name='price_item_create'),
-    path('price-item/<int:pk>/delete/', price_item_delete, name='price_item_delete'),
-    path('price-item/refresh/', price_item_refresh, name='price_item_refresh'),
 ]
