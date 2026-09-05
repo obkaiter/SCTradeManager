@@ -1,4 +1,6 @@
-from django.test import TestCase
+from django.core.cache import cache
+from django.test import TestCase, override_settings
+from django.urls import reverse
 from django.utils import timezone
 from datetime import date, timedelta
 from items.models import Item, Expense
@@ -187,3 +189,96 @@ class ExpenseServiceTest(TestCase):
         self.assertTrue(success)
         expense.refresh_from_db()
         self.assertEqual(expense.amount, 700)
+
+
+@override_settings(CACHES={
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'expense-financials-tests',
+    },
+})
+class ExpenseFinancialSummaryTest(TestCase):
+    """Сводка сразу отражает изменения расходов после открытия страницы."""
+
+    def setUp(self):
+        cache.clear()
+        self.addCleanup(cache.clear)
+        self.today = timezone.now().date()
+        self.yesterday = self.today - timedelta(days=1)
+        Item.objects.create(
+            name='Проданный предмет',
+            purchase_price=1000,
+            sale_price=1500,
+            purchase_date=self.today,
+            sale_date=self.today,
+        )
+
+    def assert_summary(self, expenses, date_from=None, date_to=None, profit=500):
+        filters = {
+            'date_from': (date_from or self.today).isoformat(),
+            'date_to': (date_to or self.today).isoformat(),
+        }
+        for page in ('item_list', 'analytics'):
+            with self.subTest(page=page, filters=filters):
+                response = self.client.get(reverse(f'items:{page}'), filters)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context['total_expenses'], expenses)
+                self.assertEqual(response.context['total_profit'], profit - expenses)
+
+    def test_delete_expense_refreshes_summary_immediately(self):
+        expense = Expense.objects.create(date=self.today, amount=12916439)
+        self.assert_summary(12916439)
+        self.assert_summary(12916439, date_from=self.yesterday)
+
+        response = self.client.post(
+            reverse('items:expense_delete', args=[expense.pk]),
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assertFalse(Expense.objects.filter(pk=expense.pk).exists())
+        self.assertEqual(
+            self.client.get(reverse('items:expense_list')).json()['expenses'], [],
+        )
+        self.assert_summary(0)
+        self.assert_summary(0, date_from=self.yesterday)
+
+    def test_create_expense_refreshes_summary_immediately(self):
+        self.assert_summary(0)
+
+        response = self.client.post(reverse('items:expense_create'), {
+            'date': self.today.isoformat(),
+            'amount': 12916439,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assert_summary(12916439)
+
+    def test_update_expense_amount_refreshes_summary_immediately(self):
+        expense = Expense.objects.create(date=self.today, amount=12916439)
+        self.assert_summary(12916439)
+
+        response = self.client.post(
+            reverse('items:expense_update', args=[expense.pk]), {'amount': 700},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assert_summary(700)
+
+    def test_move_expense_refreshes_old_and_new_periods(self):
+        expense = Expense.objects.create(date=self.today, amount=12916439)
+        self.assert_summary(12916439)
+        self.assert_summary(0, self.yesterday, self.yesterday, profit=0)
+
+        response = self.client.post(
+            reverse('items:expense_update', args=[expense.pk]),
+            {'date': self.yesterday.isoformat()},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json()['success'])
+        self.assert_summary(0)
+        self.assert_summary(12916439, self.yesterday, self.yesterday, profit=0)

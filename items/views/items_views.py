@@ -59,7 +59,7 @@ def analytics(request):
         day_expenses = daily_expenses_data.get(date, 0)
         data.append(day_profit - day_expenses)
 
-    # Финансовые показатели (оптимизировано с кэшированием)
+    # Финансовые показатели по актуальным записям
     financials = ItemService.calculate_financials_fast(date_from, date_to)
 
     # Данные для круговой диаграммы (оптимизировано)
@@ -98,7 +98,7 @@ def item_list(request):
     items = ItemService.get_items_filtered(date_from, date_to, hide_sold, name_filter)
     items = ItemService.sort_items(items, sort_by)
 
-    # Финансовые показатели (оптимизировано с кэшированием)
+    # Финансовые показатели по актуальным записям
     financials = ItemService.calculate_financials_fast(date_from, date_to)
 
     return render(request, 'items/item_list.html', {

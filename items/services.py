@@ -2,7 +2,6 @@
 Сервисный слой для бизнес-логики предметов и расходов.
 """
 from django.db.models import Q, Sum, F
-from django.core.cache import cache
 from items.models import Item, Expense
 
 
@@ -81,13 +80,9 @@ class ItemService:
         """
         Быстрый расчёт финансовых показателей за период.
         Использует агрегацию в БД вместо итерации в Python.
+        Считает по актуальным записям, чтобы сразу учитывать изменения расходов и лотов.
         Returns: dict с financial metrics
         """
-        cache_key = f'financials_{date_from}_{date_to}'
-        cached_result = cache.get(cache_key)
-        if cached_result:
-            return cached_result
-
         # Прибыль от продаж
         sold_items = Item.objects.filter(
             sale_date__isnull=False,
@@ -128,7 +123,6 @@ class ItemService:
             'net_profit': net_profit,
         }
 
-        cache.set(cache_key, result, timeout=60)  # Кэшируем на 1 минуту
         return result
 
     @staticmethod
