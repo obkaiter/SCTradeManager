@@ -189,6 +189,7 @@ class ItemServiceTest(TestCase):
         self.assertContains(response, 'Цена покупки')
         self.assertContains(response, 'Цена продажи')
         self.assertContains(response, 'id="itemPriceChart"')
+        self.assertContains(response, 'data-client-sort="true"')
         self.assertNotContains(response, 'Общая прибыль')
         self.assertNotContains(response, 'Средняя прибыль')
         chart_record = next(

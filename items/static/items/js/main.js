@@ -19,6 +19,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Сортировка по клику на заголовок
     document.querySelectorAll('.sortable').forEach(th => {
         th.addEventListener('click', function() {
+            // На странице аналитики строки сортируются локально без перезагрузки.
+            if (this.closest('table')?.dataset.clientSort === 'true') {
+                return;
+            }
+
             const field = this.dataset.sort;
             const currentSort = this.closest('table').dataset.currentSort || '';
             let newSort;
