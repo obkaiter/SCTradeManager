@@ -150,7 +150,8 @@ function initAnalyticsTableSorting() {
     };
 
     table.querySelectorAll('.sortable').forEach(header => {
-        header.addEventListener('click', function() {
+        header.addEventListener('click', function(event) {
+            event.preventDefault();
             const field = this.dataset.sort;
             const column = fieldColumns[field];
             if (column === undefined) return;

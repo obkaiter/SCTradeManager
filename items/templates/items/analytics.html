@@ -176,7 +176,7 @@
         
         <!-- Таблица детализации -->
         <div class="table-responsive">
-            <table class="table table-excel mb-0">
+            <table class="table table-excel mb-0" data-client-sort="true">
                 <thead>
                     <tr>
                         <th style="width: 50px;" class="text-center">#</th>
@@ -238,5 +238,5 @@
 </script>
 {{ item_price_data|json_script:"item-price-data" }}
 <script src="{% static 'items/js/analytics.js' %}?v=10"></script>
-<script src="{% static 'items/js/analytics_pie.js' %}?v=15"></script>
+<script src="{% static 'items/js/analytics_pie.js' %}?v=16"></script>
 {% endblock %}
