@@ -3,6 +3,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from datetime import date, timedelta
+from items.forms import ItemForm
 from items.models import Item, Expense
 from items.services import ItemService, ExpenseService
 
@@ -49,6 +50,32 @@ class ItemModelTest(TestCase):
     def test_string_representation(self):
         """Тест строкового представления."""
         self.assertEqual(str(self.item), 'Тестовый предмет')
+
+
+class ItemFormTest(TestCase):
+    """Форма создания содержит только данные новой покупки."""
+
+    def test_sale_fields_are_not_available_when_creating_item(self):
+        form = ItemForm()
+
+        self.assertNotIn('sale_price', form.fields)
+        self.assertNotIn('sale_date', form.fields)
+
+    def test_submitted_sale_fields_are_ignored(self):
+        today = timezone.now().date()
+        form = ItemForm(data={
+            'name': 'Новый предмет',
+            'purchase_price': 1000,
+            'purchase_date': today.isoformat(),
+            'quantity': 1,
+            'sale_price': 1500,
+            'sale_date': today.isoformat(),
+        })
+
+        self.assertTrue(form.is_valid(), form.errors)
+        item = form.save()
+        self.assertIsNone(item.sale_price)
+        self.assertIsNone(item.sale_date)
 
 
 class ExpenseModelTest(TestCase):
