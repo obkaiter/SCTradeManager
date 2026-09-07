@@ -144,6 +144,61 @@ class ItemServiceTest(TestCase):
         total_profit = ItemService.calculate_total_profit(items)
         self.assertEqual(total_profit, 300)
 
+    def test_analytics_groups_table_but_keeps_chart_lots_separate(self):
+        """Таблица суммирует названия, а график сохраняет отдельные сделки."""
+        duplicate = Item.objects.create(
+            name='Предмет 1',
+            purchase_price=1200,
+            sale_price=1700,
+            purchase_date=self.yesterday,
+            sale_date=self.today,
+            quantity=4,
+        )
+
+        chart_items = list(ItemService.get_sold_items_for_analytics(self.today, self.today))
+        table_items = ItemService.get_items_profit_by_name(self.today, self.today)
+
+        self.assertEqual(len(chart_items), 3)
+        self.assertIn(duplicate, chart_items)
+        self.assertEqual(sum(item.name == 'Предмет 1' for item in chart_items), 2)
+        self.assertTrue(all(isinstance(item, Item) for item in chart_items))
+
+        grouped_item = next(item for item in table_items if item['name'] == 'Предмет 1')
+        self.assertEqual(len(table_items), 2)
+        self.assertEqual(grouped_item['quantity'], 5)
+        self.assertEqual(grouped_item['purchase_price'], 2200)
+        self.assertEqual(grouped_item['sale_price'], 3200)
+        self.assertEqual(grouped_item['profit'], 1000)
+
+    def test_analytics_page_contains_lot_table_and_week_shift_buttons(self):
+        bulk_lot = Item.objects.create(
+            name='Боевой набор',
+            purchase_price=23999997,
+            sale_price=30000000,
+            purchase_date=self.today,
+            sale_date=self.today,
+            quantity=100,
+        )
+        response = self.client.get(reverse('items:analytics'), {
+            'date_from': self.today.isoformat(),
+            'date_to': self.today.isoformat(),
+        })
+
+        self.assertContains(response, 'id="previousWeekBtn"')
+        self.assertContains(response, 'id="nextWeekBtn"')
+        self.assertContains(response, 'Цена покупки')
+        self.assertContains(response, 'Цена продажи')
+        self.assertContains(response, 'id="itemPriceChart"')
+        self.assertNotContains(response, 'Общая прибыль')
+        self.assertNotContains(response, 'Средняя прибыль')
+        chart_record = next(
+            item for item in response.context['item_price_data']
+            if item['id'] == bulk_lot.id
+        )
+        self.assertEqual(chart_record['quantity'], 100)
+        self.assertEqual(chart_record['purchaseUnitPrice'], 239999.97)
+        self.assertEqual(chart_record['saleUnitPrice'], 300000)
+
     def test_update_item_valid(self):
         """Тест обновления предмета."""
         item = Item.objects.first()

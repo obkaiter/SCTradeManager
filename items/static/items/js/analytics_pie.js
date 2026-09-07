@@ -1,223 +1,198 @@
 /**
- * Analytics Pie Chart - круговая диаграмма прибыли по предметам
+ * График закупочной и продажной цены выбранного предмета и сортировка лотов.
  */
 
-// Форматирование цены
-function formatPrice(value) {
-    const num = parseInt(value) || 0;
-    return num.toLocaleString('ru-RU') + ' ₽';
+function formatItemPrice(value) {
+    return (Number(value) || 0).toLocaleString('ru-RU', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    }) + ' ₽';
 }
 
-// Форматирование средней прибыли (целое число)
-function formatAvgPrice(value) {
-    const num = Math.round(parseFloat(value) || 0);
-    return num.toLocaleString('ru-RU') + ' ₽';
-}
+function initItemPriceAnalytics(items) {
+    const canvas = document.getElementById('itemPriceChart');
+    const title = document.getElementById('itemPriceChartTitle');
+    const table = document.querySelector('.table-excel');
+    if (!canvas || !title || !table || items.length === 0 || typeof Chart === 'undefined') return;
 
-// Инициализация круговой диаграммы
-function initPieChart(labels, data, counts, avgProfits) {
-    const ctx = document.getElementById('pieChart');
-    if (!ctx) return;
+    const rows = Array.from(table.querySelectorAll('tbody .analytics-item-row'));
+    let selectedItemName = rows[0].dataset.itemName;
+    let chart;
 
-    const context = ctx.getContext('2d');
-
-    // Цвета для секторов диаграммы
-    const backgroundColors = [
-        'rgba(77, 166, 255, 0.8)',
-        'rgba(40, 167, 69, 0.8)',
-        'rgba(255, 193, 7, 0.8)',
-        'rgba(220, 53, 69, 0.8)',
-        'rgba(108, 117, 125, 0.8)',
-        'rgba(0, 200, 83, 0.8)',
-        'rgba(255, 152, 0, 0.8)',
-        'rgba(156, 39, 176, 0.8)',
-        'rgba(33, 150, 243, 0.8)',
-        'rgba(244, 67, 54, 0.8)',
-        'rgba(76, 175, 80, 0.8)',
-        'rgba(255, 87, 34, 0.8)',
-        'rgba(121, 85, 72, 0.8)',
-        'rgba(0, 188, 212, 0.8)',
-        'rgba(233, 30, 99, 0.8)',
-        'rgba(63, 81, 181, 0.8)',
-        'rgba(3, 169, 244, 0.8)',
-        'rgba(139, 195, 74, 0.8)',
-        'rgba(255, 167, 38, 0.8)',
-        'rgba(96, 125, 139, 0.8)',
-    ];
-
-    // Генерируем дополнительные цвета если нужно
-    while (backgroundColors.length < labels.length) {
-        const randomColor = `rgba(${Math.random() * 255}, ${Math.random() * 255}, ${Math.random() * 255}, 0.8)`;
-        backgroundColors.push(randomColor);
+    function recordsForItem(itemName) {
+        return items
+            .filter(item => item.name === itemName)
+            .sort((a, b) => a.saleDate.localeCompare(b.saleDate) || a.id - b.id);
     }
 
-    new Chart(context, {
-        type: 'pie',
-        data: {
-            labels: labels,
-            datasets: [{
-                data: data,
-                backgroundColor: backgroundColors,
-                borderColor: 'rgba(30, 30, 30, 1)',
-                borderWidth: 2,
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        color: '#f0f0f0',
-                        font: {
-                            size: 13
+    function showItem(itemName) {
+        const records = recordsForItem(itemName);
+        if (records.length === 0) return;
+
+        selectedItemName = itemName;
+        title.textContent = records[0].name;
+        rows.forEach(row => {
+            const isSelected = row.dataset.itemName === itemName;
+            row.classList.toggle('is-selected', isSelected);
+            row.setAttribute('aria-pressed', String(isSelected));
+        });
+
+        const chartData = {
+            labels: records.map(item => item.saleDate),
+            datasets: [
+                {
+                    label: 'Закупочная цена за 1 предмет',
+                    data: records.map(item => item.purchaseUnitPrice),
+                    borderColor: 'rgb(255, 193, 7)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.15)',
+                    borderWidth: 2,
+                    tension: 0.25,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                },
+                {
+                    label: 'Продажная цена за 1 предмет',
+                    data: records.map(item => item.saleUnitPrice),
+                    borderColor: 'rgb(40, 167, 69)',
+                    backgroundColor: 'rgba(40, 167, 69, 0.15)',
+                    borderWidth: 2,
+                    tension: 0.25,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                }
+            ]
+        };
+
+        if (chart) {
+            chart.data = chartData;
+            chart.options.plugins.tooltip.callbacks.title = context => {
+                const record = records[context[0].dataIndex];
+                return `${record.saleDate} · лот #${record.id} · ${record.quantity} шт.`;
+            };
+            chart.update();
+            return;
+        }
+
+        chart = new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: chartData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: { color: '#f0f0f0' }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: context => {
+                                const record = records[context[0].dataIndex];
+                                return `${record.saleDate} · лот #${record.id} · ${record.quantity} шт.`;
+                            },
+                            label: context => `${context.dataset.label}: ${formatItemPrice(context.parsed.y)}`
                         },
-                        padding: 12,
-                        usePointStyle: true,
-                        pointStyle: 'circle'
+                        backgroundColor: 'rgba(30, 30, 30, 0.95)',
+                        titleColor: '#f0f0f0',
+                        bodyColor: '#f0f0f0',
+                        borderColor: '#3e3e42',
+                        borderWidth: 1,
                     }
                 },
-                tooltip: {
-                    callbacks: {
-                        label: function(context) {
-                            const index = context.dataIndex;
-                            const label = context.label || '';
-                            const value = context.parsed || 0;
-                            const count = counts[index] || 0;
-                            const avgProfit = avgProfits[index] || 0;
-
-                            return [
-                                `Предмет: ${label}`,
-                                `Общая прибыль: ${formatPrice(value)}`,
-                                `Количество: ${count}`,
-                                `Средняя прибыль: ${formatAvgPrice(avgProfit)}`
-                            ];
-                        }
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Дата продажи', color: '#f0f0f0' },
+                        ticks: { color: '#b0b0b0' },
+                        grid: { color: '#3e3e42' }
                     },
-                    backgroundColor: 'rgba(30, 30, 30, 0.95)',
-                    titleColor: '#f0f0f0',
-                    bodyColor: '#f0f0f0',
-                    borderColor: '#3e3e42',
-                    borderWidth: 1,
-                    padding: 12,
-                    cornerRadius: 6,
-                    titleFont: {
-                        size: 14,
-                        weight: 'bold'
-                    },
-                    bodyFont: {
-                        size: 13
+                    y: {
+                        title: { display: true, text: 'Цена за 1 предмет (₽)', color: '#f0f0f0' },
+                        ticks: {
+                            color: '#b0b0b0',
+                            callback: value => formatItemPrice(value)
+                        },
+                        grid: { color: '#3e3e42' }
                     }
                 }
-            },
-            animation: {
-                duration: 500,
-                easing: 'easeOutQuart'
             }
-        }
+        });
+    }
+
+    rows.forEach(row => {
+        const selectRow = () => showItem(row.dataset.itemName);
+        row.addEventListener('click', selectRow);
+        row.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                selectRow();
+            }
+        });
     });
+
+    showItem(selectedItemName);
 }
 
-// Инициализация сортировки таблицы
-function initTableSorting() {
+function initAnalyticsTableSorting() {
     const table = document.querySelector('.table-excel');
     if (!table) return;
 
     const tbody = table.querySelector('tbody');
-    if (!tbody) return;
-
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    let currentSortField = 'total_profit';
+    const rows = Array.from(tbody.querySelectorAll('.analytics-item-row'));
+    let currentSortField = '';
     let currentSortDir = 'desc';
+    const fieldColumns = {
+        name: 1,
+        quantity: 2,
+        purchase_price: 3,
+        sale_price: 4,
+        profit: 5,
+    };
 
-    table.querySelectorAll('.sortable').forEach(th => {
-        // Удаляем все существующие обработчики клонированием элемента
-        const newTh = th.cloneNode(true);
-        th.parentNode.replaceChild(newTh, th);
-        
-        newTh.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            
+    table.querySelectorAll('.sortable').forEach(header => {
+        header.addEventListener('click', function() {
             const field = this.dataset.sort;
-            
-            // Определяем направление сортировки
+            const column = fieldColumns[field];
+            if (column === undefined) return;
+
             if (currentSortField === field) {
                 currentSortDir = currentSortDir === 'desc' ? 'asc' : 'desc';
             } else {
                 currentSortField = field;
-                currentSortDir = 'desc';
+                currentSortDir = field === 'name' ? 'asc' : 'desc';
             }
 
-            // Сортировка строк на стороне клиента
-            rows.sort((a, b) => {
-                let aVal, bVal;
-                const cells = a.querySelectorAll('td');
-                const bCells = b.querySelectorAll('td');
-
-                if (field === 'name') {
-                    aVal = cells[1].textContent.trim();
-                    bVal = bCells[1].textContent.trim();
-                    return currentSortDir === 'desc' ? bVal.localeCompare(aVal) : aVal.localeCompare(bVal);
-                } else if (field === 'count') {
-                    aVal = parseInt(cells[2].textContent.trim()) || 0;
-                    bVal = parseInt(bCells[2].textContent.trim()) || 0;
-                    return currentSortDir === 'desc' ? bVal - aVal : aVal - bVal;
-                } else if (field === 'total_profit' || field === 'avg_profit') {
-                    const cellIndex = field === 'total_profit' ? 3 : 4;
-                    aVal = parseInt(cells[cellIndex].textContent.replace(/\D/g, '')) || 0;
-                    bVal = parseInt(bCells[cellIndex].textContent.replace(/\D/g, '')) || 0;
-                    return currentSortDir === 'desc' ? bVal - aVal : aVal - bVal;
-                }
-                return 0;
+            rows.sort((rowA, rowB) => {
+                const valueA = rowA.cells[column].dataset.value;
+                const valueB = rowB.cells[column].dataset.value;
+                const comparison = field === 'name'
+                    ? valueA.localeCompare(valueB, 'ru', { sensitivity: 'base' })
+                    : Number(valueA) - Number(valueB);
+                return currentSortDir === 'asc' ? comparison : -comparison;
             });
 
-            // Перерисовка таблицы
             rows.forEach((row, index) => {
                 tbody.appendChild(row);
-                // Обновляем номер строки
-                const firstCell = row.querySelector('td:first-child');
-                if (firstCell) {
-                    firstCell.textContent = index + 1;
-                }
+                row.cells[0].textContent = index + 1;
             });
 
-            // Обновление иконок сортировки
             table.querySelectorAll('.sort-icon').forEach(icon => {
                 icon.innerHTML = '<i class="bi bi-arrow-down-up"></i>';
             });
-            const activeIcon = newTh.querySelector('.sort-icon');
-            if (activeIcon) {
-                if (currentSortDir === 'desc') {
-                    activeIcon.innerHTML = '<i class="bi bi-arrow-down"></i>';
-                } else {
-                    activeIcon.innerHTML = '<i class="bi bi-arrow-up"></i>';
-                }
-            }
+            const activeIcon = this.querySelector('.sort-icon');
+            activeIcon.innerHTML = currentSortDir === 'asc'
+                ? '<i class="bi bi-arrow-up"></i>'
+                : '<i class="bi bi-arrow-down"></i>';
         });
     });
 }
 
-// Инициализация при загрузке
 (function() {
     function init() {
-        // Проверяем наличие данных для круговой диаграммы
-        if (!window.pieChartData) {
-            return;
-        }
-
-        const labels = window.pieChartData.labels || [];
-        const data = window.pieChartData.data || [];
-        const counts = window.pieChartData.counts || [];
-        const avgProfits = window.pieChartData.avgProfits || [];
-
-        if (labels.length > 0 && typeof Chart !== 'undefined') {
-            initPieChart(labels, data, counts, avgProfits);
-        }
-
-        initTableSorting();
+        const dataElement = document.getElementById('item-price-data');
+        const items = dataElement ? JSON.parse(dataElement.textContent) : [];
+        initItemPriceAnalytics(items);
+        initAnalyticsTableSorting();
     }
 
     if (document.readyState === 'loading') {

@@ -39,7 +39,7 @@
             <input type="hidden" name="sort" value="{{ sort_by }}">
 
             <div class="col-12 mb-2">
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     <button type="button" class="btn btn-outline-primary btn-sm" id="weekBtn">
                         <i class="bi bi-calendar-week me-1"></i> Неделя
                     </button>
@@ -51,6 +51,14 @@
                     </button>
                     <button type="button" class="btn btn-outline-secondary btn-sm" id="showAllBtn">
                         <i class="bi bi-list-ul me-1"></i> Всё
+                    </button>
+                </div>
+                <div class="d-flex flex-wrap gap-2 mt-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="previousWeekBtn">
+                        <i class="bi bi-arrow-left me-1"></i> -1 Неделя
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="nextWeekBtn">
+                        +1 Неделя <i class="bi bi-arrow-right ms-1"></i>
                     </button>
                 </div>
             </div>
@@ -145,10 +153,10 @@
     </div>
 </div>
 
-<!-- Круговая диаграмма и детализация -->
+<!-- График цен и отдельные лоты -->
 <div class="card mt-4">
     <div class="card-header">
-        <i class="bi bi-pie-chart-fill me-2"></i>
+        <i class="bi bi-graph-up me-2"></i>
         Прибыль по предметам
     </div>
     <div class="card-body">
@@ -158,8 +166,12 @@
             Нет данных о продажах за выбранный период. Выберите другой диапазон дат.
         </div>
         {% else %}
-        <div id="pieChartContainer" style="height: 400px; position: relative; margin-bottom: 20px;">
-            <canvas id="pieChart"></canvas>
+        <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="text-secondary">Выбранный предмет:</span>
+            <strong id="itemPriceChartTitle"></strong>
+        </div>
+        <div id="itemPriceChartContainer" style="height: 400px; position: relative; margin-bottom: 20px;">
+            <canvas id="itemPriceChart"></canvas>
         </div>
         
         <!-- Таблица детализации -->
@@ -173,31 +185,37 @@
                             Название
                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                         </th>
-                        <th class="sortable text-center" data-sort="count" style="width: 100px;">
+                        <th class="sortable text-center" data-sort="quantity" style="width: 110px;">
                             <i class="bi bi-hash me-1"></i>
                             Количество
                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                         </th>
-                        <th class="sortable text-right" data-sort="total_profit" style="width: 120px;">
-                            <i class="bi bi-graph-up me-1"></i>
-                            Общая прибыль
+                        <th class="sortable text-right" data-sort="purchase_price" style="width: 150px;">
+                            <i class="bi bi-cart-down me-1"></i>
+                            Цена покупки
                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                         </th>
-                        <th class="sortable text-right" data-sort="avg_profit" style="width: 120px;">
-                            <i class="bi bi-trophy me-1"></i>
-                            Средняя прибыль
+                        <th class="sortable text-right" data-sort="sale_price" style="width: 150px;">
+                            <i class="bi bi-cart-up me-1"></i>
+                            Цена продажи
+                            <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
+                        </th>
+                        <th class="sortable text-right" data-sort="profit" style="width: 130px;">
+                            <i class="bi bi-graph-up me-1"></i>
+                            Прибыль
                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for item in items %}
-                    <tr>
+                    <tr class="analytics-item-row" data-item-name="{{ item.name }}" tabindex="0" role="button" aria-label="Показать график цен: {{ item.name }}">
                         <td class="text-center">{{ forloop.counter }}</td>
-                        <td>{{ item.name }}</td>
-                        <td class="text-center">{{ item.count }}</td>
-                        <td class="text-right">{{ item.total_profit|format_price }}</td>
-                        <td class="text-right">{{ item.avg_profit|format_price }}</td>
+                        <td data-value="{{ item.name }}">{{ item.name }}</td>
+                        <td class="text-center" data-value="{{ item.quantity }}">{{ item.quantity }}</td>
+                        <td class="text-right" data-value="{{ item.purchase_price }}">{{ item.purchase_price|format_price }}</td>
+                        <td class="text-right" data-value="{{ item.sale_price }}">{{ item.sale_price|format_price }}</td>
+                        <td class="profit-cell {% if item.profit < 0 %}negative-profit{% elif item.profit > 0 %}positive-profit{% else %}zero-profit{% endif %}" data-value="{{ item.profit }}">{{ item.profit|format_price }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -217,13 +235,8 @@
         nameFilter: '{{ name_filter|default:'' }}',
         sortBy: '{{ sort_by|default:'-purchase_date' }}'
     };
-    window.pieChartData = {
-        labels: [{% for item in items %}'{{ item.name|escapejs }}'{% if not forloop.last %},{% endif %}{% endfor %}],
-        data: [{% for item in items %}{{ item.total_profit|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}],
-        counts: [{% for item in items %}{{ item.count|default:1 }}{% if not forloop.last %},{% endif %}{% endfor %}],
-        avgProfits: [{% for item in items %}{{ item.avg_profit|floatformat:0|default:0 }}{% if not forloop.last %},{% endif %}{% endfor %}]
-    };
 </script>
-<script src="{% static 'items/js/analytics.js' %}?v=9"></script>
-<script src="{% static 'items/js/analytics_pie.js' %}?v=12"></script>
+{{ item_price_data|json_script:"item-price-data" }}
+<script src="{% static 'items/js/analytics.js' %}?v=10"></script>
+<script src="{% static 'items/js/analytics_pie.js' %}?v=15"></script>
 {% endblock %}

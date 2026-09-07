@@ -62,8 +62,17 @@ def analytics(request):
     # Финансовые показатели по актуальным записям
     financials = ItemService.calculate_financials_fast(date_from, date_to)
 
-    # Данные для круговой диаграммы (оптимизировано)
+    # Таблица суммируется по названию, график строится по исходным лотам
+    sold_items = list(ItemService.get_sold_items_for_analytics(date_from, date_to))
     items_list = ItemService.get_items_profit_by_name(date_from, date_to)
+    item_price_data = [{
+        'id': item.id,
+        'name': item.name,
+        'saleDate': item.sale_date.isoformat(),
+        'quantity': item.quantity,
+        'purchaseUnitPrice': item.purchase_price / item.quantity,
+        'saleUnitPrice': item.sale_price / item.quantity,
+    } for item in sold_items]
 
     # Параметры фильтра
     hide_sold = request.GET.get('hide_sold', 'false')
@@ -74,6 +83,7 @@ def analytics(request):
         'labels': labels,
         'data': data,
         'items': items_list,
+        'item_price_data': item_price_data,
         'date_from': date_from_obj,
         'date_to': date_to_obj,
         'gross_profit': financials['gross_profit'],
