@@ -16,6 +16,35 @@ function submitFilterForm() {
     }
 }
 
+function parseInputDate(value) {
+    const parts = value.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) return null;
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function formatInputDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function shiftDateRange(days) {
+    const dateFromInput = document.getElementById('dateFrom');
+    const dateToInput = document.getElementById('dateTo');
+    if (!dateFromInput || !dateToInput) return;
+
+    const dateFrom = parseInputDate(dateFromInput.value);
+    const dateTo = parseInputDate(dateToInput.value);
+    if (!dateFrom || !dateTo) return;
+
+    dateFrom.setDate(dateFrom.getDate() + days);
+    dateTo.setDate(dateTo.getDate() + days);
+    dateFromInput.value = formatInputDate(dateFrom);
+    dateToInput.value = formatInputDate(dateTo);
+    submitFilterForm();
+}
+
 // Инициализация кнопок фильтра
 function initFilterButtons() {
     // Кнопка "Неделя"
@@ -87,6 +116,20 @@ function initFilterButtons() {
             document.getElementById('dateFrom').value = dateFrom;
             document.getElementById('dateTo').value = dateTo;
             submitFilterForm();
+        });
+    }
+
+    const previousWeekBtn = document.getElementById('previousWeekBtn');
+    if (previousWeekBtn) {
+        previousWeekBtn.addEventListener('click', function() {
+            shiftDateRange(-7);
+        });
+    }
+
+    const nextWeekBtn = document.getElementById('nextWeekBtn');
+    if (nextWeekBtn) {
+        nextWeekBtn.addEventListener('click', function() {
+            shiftDateRange(7);
         });
     }
 

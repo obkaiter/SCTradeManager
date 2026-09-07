@@ -161,46 +161,37 @@ class ItemService:
         return result
 
     @staticmethod
+    def get_sold_items_for_analytics(date_from, date_to):
+        """Получить отдельные проданные лоты за выбранный период."""
+        return Item.objects.filter(
+            sale_date__isnull=False,
+            sale_price__isnull=False,
+            sale_date__gte=date_from,
+            sale_date__lte=date_to
+        ).order_by('-sale_date', '-id')
+
+    @staticmethod
     def get_items_profit_by_name(date_from, date_to):
-        """
-        Получить прибыль по предметам (группировка по названию).
-        Returns: list of dict с name, total_profit, count, avg_profit
-        """
-        # Фильтруем только предметы с ненулевой прибылью
+        """Суммировать проданные лоты по названию для таблицы аналитики."""
         data = Item.objects.filter(
             sale_date__isnull=False,
             sale_price__isnull=False,
             sale_date__gte=date_from,
             sale_date__lte=date_to
-        ).annotate(
-            profit=F('sale_price') - F('purchase_price')
         ).values('name').annotate(
-            total_profit=Sum('profit'),
-            total_count=Sum('quantity')
-        ).filter(
-            total_profit__isnull=False
-        ).order_by('-total_profit')
+            total_quantity=Sum('quantity'),
+            total_purchase_price=Sum('purchase_price'),
+            total_sale_price=Sum('sale_price'),
+            total_profit=Sum(F('sale_price') - F('purchase_price')),
+        ).order_by('-total_profit', 'name')
 
-        result = []
-        for item in data:
-            total_profit = item['total_profit'] or 0
-            total_count = item['total_count'] or 0
-            
-            # Пропускаем предметы с нулевым количеством
-            if total_count == 0:
-                continue
-            
-            # Средняя прибыль = общая прибыль / количество
-            avg_profit = total_profit / total_count
-            
-            result.append({
-                'name': item['name'],
-                'count': total_count,
-                'total_profit': total_profit,
-                'avg_profit': avg_profit,
-            })
-
-        return result
+        return [{
+            'name': item['name'],
+            'quantity': item['total_quantity'] or 0,
+            'purchase_price': item['total_purchase_price'] or 0,
+            'sale_price': item['total_sale_price'] or 0,
+            'profit': item['total_profit'] or 0,
+        } for item in data]
 
     @staticmethod
     def update_item(item, field, value):
