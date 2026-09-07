@@ -216,22 +216,10 @@
                         <input type="text" name="purchase_price" id="addItemPurchasePrice" class="form-control" placeholder="0 ₽" required>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" for="addItemSalePrice">
-                            <i class="bi bi-currency-dollar me-1"></i>Цена продажи
-                        </label>
-                        <input type="text" name="sale_price" id="addItemSalePrice" class="form-control" placeholder="0 ₽">
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label" for="addItemPurchaseDate">
                             <i class="bi bi-calendar-check me-1"></i>Дата покупки
                         </label>
                         <input type="date" name="purchase_date" id="addItemPurchaseDate" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label" for="addItemSaleDate">
-                            <i class="bi bi-calendar-x me-1"></i>Дата продажи
-                        </label>
-                        <input type="date" name="sale_date" id="addItemSaleDate" class="form-control">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="addItemDuplicate">
@@ -481,7 +469,7 @@
     </div>
 </div>
 
-<!-- Контекстное меню для цены покупки -->
+<!-- Контекстное меню для редактируемых числовых ячеек -->
 <div id="purchasePriceContextMenu" class="context-menu">
     <div class="context-menu-item" id="ctxMenuEdit">
         <i class="bi bi-pencil"></i> Изменить

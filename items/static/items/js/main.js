@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Инициализация форматирования цен во всех формах
     initPriceFields(['addExpenseAmount', 'editExpenseAmount']);
-    initPriceFields(['addItemPurchasePrice', 'addItemSalePrice']);
+    initPriceFields(['addItemPurchasePrice']);
     initPriceFields(['addPriceAmount']);
     initPriceFields(['fleshSolovikPrice', 'fleshSlastenaPrice', 'fleshKubarbuzPrice', 'fleshLimonnikPrice']);
     // Поле количества не требует форматирования цены
@@ -419,13 +419,8 @@ function initAddItemSubmit() {
         }
 
         const purchasePriceInput = document.getElementById('addItemPurchasePrice');
-        const salePriceInput = document.getElementById('addItemSalePrice');
-
         if (purchasePriceInput) {
             formData.set('purchase_price', parsePrice(purchasePriceInput.value));
-        }
-        if (salePriceInput) {
-            formData.set('sale_price', parsePrice(salePriceInput.value));
         }
 
         // Блокировка кнопки отправки

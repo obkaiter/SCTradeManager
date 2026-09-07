@@ -159,11 +159,15 @@ function toggleItemGroup(toggleCell) {
 }
 
 /**
- * Глобальная инициализация контекстного меню для purchase_price
+ * Глобальная инициализация контекстного меню для числовых ячеек
  */
 function initContextMenuGlobal() {
     document.addEventListener('contextmenu', function(e) {
-        const target = e.target.closest('.price-cell[data-field="purchase_price"]');
+        const target = e.target.closest(
+            '.editable-cell[data-field="purchase_price"], ' +
+            '.editable-cell[data-field="sale_price"], ' +
+            '.editable-cell[data-field="quantity"]'
+        );
         if (target) {
             e.preventDefault();
             e.stopPropagation();
@@ -284,15 +288,7 @@ function initEditableCells(cells) {
         });
 
         cell.addEventListener('dblclick', function() {
-            hideCustomTooltip();
-            if (field === 'purchase_price' || field === 'sale_price') {
-                editInput.value = parsePrice(displayValue.textContent);
-            } else {
-                editInput.value = displayValue.textContent;
-            }
-            displayValue.style.display = 'none';
-            editInput.style.display = 'block';
-            editInput.focus();
+            enterCellEditMode(cell);
         });
 
         editInput.addEventListener('blur', function() {
@@ -316,6 +312,25 @@ function initEditableCells(cells) {
     });
 
     initContextMenu();
+}
+
+/**
+ * Перевести ячейку в режим редактирования.
+ */
+function enterCellEditMode(cell) {
+    const displayValue = cell?.querySelector('.display-value');
+    const editInput = cell?.querySelector('.edit-input');
+    const field = cell?.dataset.field;
+
+    if (!displayValue || !editInput) return;
+
+    hideCustomTooltip();
+    editInput.value = field === 'purchase_price' || field === 'sale_price'
+        ? parsePrice(displayValue.textContent)
+        : displayValue.textContent.trim();
+    displayValue.style.display = 'none';
+    editInput.style.display = 'block';
+    editInput.focus();
 }
 
 /**
@@ -833,15 +848,7 @@ function initContextMenu() {
     editItem.addEventListener('click', function(e) {
         e.stopPropagation();
         hideContextMenu();
-        if (contextMenuCell) {
-            const displayValue = contextMenuCell.querySelector('.display-value');
-            const editInput = contextMenuCell.querySelector('.edit-input');
-            if (displayValue && editInput) {
-                displayValue.style.display = 'none';
-                editInput.style.display = 'block';
-                editInput.focus();
-            }
-        }
+        enterCellEditMode(contextMenuCell);
     });
 
     addItem.addEventListener('click', function(e) {
@@ -863,6 +870,11 @@ function initContextMenu() {
  */
 function showContextMenu(x, y) {
     if (!contextMenu) return;
+
+    const addItem = document.getElementById('ctxMenuAdd');
+    if (addItem) {
+        addItem.style.display = contextMenuCell?.dataset.field === 'purchase_price' ? '' : 'none';
+    }
 
     contextMenu.style.display = 'block';
     contextMenu.style.left = x + 'px';
