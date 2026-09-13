@@ -4,131 +4,90 @@
 {% block title %}Список предметов{% endblock %}
 
 {% block content %}
-<!-- Скрытое поле для хранения состояния hide_sold -->
 <input type="hidden" id="hideSoldState" value="{{ hide_sold|yesno:'true,false' }}">
+<section class="page-header">
+    <div>
+        <span class="page-eyebrow">Рабочий стол · {{ date_from|date:"d.m.y" }} — {{ date_to|date:"d.m.y" }}</span>
+        <h1 class="page-title"><i class="bi bi-box-seam"></i><span>Менеджер сделок</span></h1>
+        <p class="page-subtitle">Управляйте лотами, продажами и резервом в одном месте.</p>
+    </div>
+    <div class="toolbar-actions">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal"><i class="bi bi-plus-lg"></i> Добавить сделку</button>
+        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#dateFilterModal"><i class="bi bi-funnel"></i><span class="d-none d-sm-inline"> Фильтр</span></button>
+        <button type="button" class="btn btn-secondary" id="toggleSoldBtn"><i class="bi bi-eye-slash"></i><span class="d-none d-sm-inline"> Скрыть проданные</span></button>
+        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#expenseModal" id="openExpenseBtn"><i class="bi bi-receipt"></i><span class="d-none d-sm-inline"> Расходы</span></button>
+        <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#fleshModal" id="openFleshBtn"><i class="bi bi-heart-pulse"></i><span class="d-none d-sm-inline"> Мякоть</span></button>
+    </div>
+</section>
 
-<!-- Заголовок страницы -->
-<div class="row mb-4 align-items-center">
-    <div class="col-md-6">
-        <h2 class="mb-0"><i class="bi bi-box-seam me-2"></i>Менеджер предметов</h2>
-    </div>
-    <div class="col-md-6">
-        <!-- Кнопки действий - строка 1 -->
-        <div class="d-flex justify-content-end gap-2 flex-wrap mb-2">
-            <a href="#" id="analyticsLink" class="btn btn-info">
-                <i class="bi bi-bar-chart-line"></i>
-                <span class="d-none d-sm-inline">Аналитика</span>
-            </a>
-            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#dateFilterModal">
-                <i class="bi bi-funnel"></i>
-                <span class="d-none d-sm-inline">Фильтр</span>
-            </button>
-            <button type="button" class="btn btn-secondary" id="toggleSoldBtn">
-                <i class="bi bi-eye-slash"></i>
-                <span class="d-none d-sm-inline">Скрыть проданные</span>
-            </button>
-            <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#expenseModal" id="openExpenseBtn">
-                <i class="bi bi-receipt"></i>
-                <span class="d-none d-sm-inline">Расходы</span>
-            </button>
+<section class="filter-panel" aria-label="Фильтры сделок">
+    <form class="filter-grid" id="quickFilterForm" method="get">
+        <div class="filter-search">
+            <label class="filter-panel__label" for="quickNameInput">Поиск</label>
+            <div class="input-shell"><i class="bi bi-search"></i><input type="search" class="form-control" id="quickNameInput" name="name" value="{{ request.GET.name|default:'' }}" placeholder="Название предмета" autocomplete="off"></div>
         </div>
-        <!-- Кнопки действий - строка 2 (зафиксированные) -->
-        <div class="d-flex justify-content-end gap-2 flex-wrap">
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#fleshModal" id="openFleshBtn">
-                <i class="bi bi-plus-circle"></i>
-                <span class="d-none d-sm-inline">Мякоть</span>
-            </button>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addItemModal">
-                <i class="bi bi-plus-lg"></i>
-                <span class="d-none d-sm-inline">Добавить</span>
-            </button>
-        </div>
+        <div><label class="filter-panel__label" for="quickDateFrom">Период с</label><input type="date" class="form-control" id="quickDateFrom" name="date_from" value="{{ date_from|date:'Y-m-d' }}"></div>
+        <div><label class="filter-panel__label" for="quickDateTo">Период по</label><input type="date" class="form-control" id="quickDateTo" name="date_to" value="{{ date_to|date:'Y-m-d' }}"></div>
+        <div class="filter-submit"><input type="hidden" name="hide_sold" value="{{ hide_sold|yesno:'true,false' }}"><input type="hidden" name="sort" value="{{ sort_by }}"><button class="btn btn-secondary" type="submit"><i class="bi bi-arrow-right"></i> Применить</button></div>
+    </form>
+    <div class="filter-presets" aria-label="Быстрые периоды">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="weekBtn"><i class="bi bi-calendar-week"></i> Неделя</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="threeDaysBtn"><i class="bi bi-calendar-day"></i> 3 дня</button>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="todayBtn"><i class="bi bi-calendar-event"></i> Сегодня</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary" id="showAllBtn"><i class="bi bi-infinity"></i> Всё время</button>
     </div>
-</div>
+</section>
 
-<!-- Блок с итогами -->
-<div class="summary-block mb-4">
-    <div class="summary-row">
-        <span class="summary-label">
-            <i class="bi bi-calendar-range me-2"></i>
-            Прибыль за период: {{ date_from|date:"d.m.y" }} - {{ date_to|date:"d.m.y" }}
-        </span>
-        <span class="summary-value fs-6 {% if total_profit < 0 %}text-danger{% elif total_profit > 0 %}text-success{% endif %}" id="summaryTotalProfit">
-            {{ total_profit|format_price }}
-        </span>
-    </div>
-    <div class="summary-row">
-        <span class="summary-label">
-            <i class="bi bi-receipt-cutoff me-2"></i>
-            Накладные расходы:
-        </span>
-        <span class="summary-value fs-6 text-danger" id="summaryTotalExpenses">
-            - {{ total_expenses|format_price }}
-        </span>
-    </div>
-    <div class="summary-row">
-        <span class="summary-label">
-            <i class="bi bi-piggy-bank me-2"></i>
-            Зарезервировано:
-        </span>
-        <span class="summary-value fs-6 text-secondary" id="summaryReservedAmount">
-            {{ reserved_amount|format_price }}
-        </span>
-    </div>
-    <div class="summary-divider"></div>
-    <div class="summary-row">
-        <span class="summary-label">
-            <i class="bi bi-graph-up-arrow me-2"></i>
-            <strong>Чистая прибыль:</strong>
-        </span>
-        <span class="summary-value fs-5 {% if net_profit < 0 %}text-danger{% elif net_profit > 0 %}text-success{% endif %}" id="summaryNetProfit">
-            {{ net_profit|format_price }}
-        </span>
-    </div>
-</div>
+<section class="kpi-grid item-kpi-grid" aria-label="Финансовая сводка">
+    <article class="kpi-card {% if total_expenses > 0 %}kpi-card--danger{% endif %}"><div class="kpi-label"><i class="bi bi-receipt-cutoff"></i> Расходы</div><div id="summaryTotalExpenses" class="kpi-value {% if total_expenses > 0 %}is-negative{% endif %}">{% if total_expenses > 0 %}- {% endif %}{{ total_expenses|format_price }}</div><div class="kpi-meta">Накладные расходы</div></article>
+    <article class="kpi-card kpi-card--accent"><div class="kpi-label"><i class="bi bi-piggy-bank"></i> В резерве</div><div id="summaryReservedAmount" class="kpi-value">{{ reserved_amount|format_price }}</div><div class="kpi-meta">Открытые покупки</div></article>
+    <article class="kpi-card {% if net_profit > 0 %}kpi-card--success{% elif net_profit < 0 %}kpi-card--danger{% endif %}"><div class="kpi-label"><i class="bi bi-wallet2"></i> Чистая прибыль</div><div id="summaryNetProfit" class="kpi-value {% if net_profit > 0 %}is-positive{% elif net_profit < 0 %}is-negative{% endif %}">{{ net_profit|format_price }}</div><div class="kpi-meta">После расходов</div></article>
+</section>
 
 <!-- Таблица предметов -->
-<div class="table-responsive mb-4">
+<div class="data-panel">
+    <div class="data-panel__header"><div><h2 class="section-title">Лоты и продажи</h2><span class="section-note">Клик по ячейке — редактирование, двойной клик по названию — изменить текст.</span></div><span class="section-note">{{ items|length }} записей</span></div>
+    <div class="table-responsive">
     <table class="table table-excel mb-0" id="itemsTable" data-current-sort="{{ sort_by }}">
         <thead>
             <tr>
-                <th style="width: 78px;" class="text-center">#</th>
-                <th class="sortable" data-sort="name" style="width: 200px;">
+                <th class="col-index text-center">#</th>
+                <th class="col-name sortable" data-sort="name">
                     <i class="bi bi-tag me-1"></i>
                     Название
                     <span class="sort-icon">{% if sort_by == 'name' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-name' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable" data-sort="purchase_price" style="width: 120px;">
+                <th class="col-price sortable" data-sort="purchase_price">
                     <i class="bi bi-cart me-1"></i>
                     Покупка
                     <span class="sort-icon">{% if sort_by == 'purchase_price' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-purchase_price' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable text-center" data-sort="quantity" style="width: 100px;">
+                <th class="col-quantity sortable text-center" data-sort="quantity">
                     <i class="bi bi-hash me-1"></i>
                     Кол-во
                     <span class="sort-icon">{% if sort_by == 'quantity' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-quantity' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable" data-sort="sale_price" style="width: 120px;">
+                <th class="col-price sortable" data-sort="sale_price">
                     <i class="bi bi-currency-dollar me-1"></i>
                     Продажа
                     <span class="sort-icon">{% if sort_by == 'sale_price' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-sale_price' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable text-center" data-sort="purchase_date" style="width: 110px;">
+                <th class="col-date sortable text-center" data-sort="purchase_date">
                     <i class="bi bi-calendar-check me-1"></i>
                     Дата покупки
                     <span class="sort-icon">{% if sort_by == 'purchase_date' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-purchase_date' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable text-center" data-sort="sale_date" style="width: 110px;">
+                <th class="col-date sortable text-center" data-sort="sale_date">
                     <i class="bi bi-calendar-x me-1"></i>
                     Дата продажи
                     <span class="sort-icon">{% if sort_by == 'sale_date' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-sale_date' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th class="sortable" data-sort="profit" style="width: 120px;">
+                <th class="col-price sortable" data-sort="profit">
                     <i class="bi bi-trend-up me-1"></i>
                     Прибыль
                     <span class="sort-icon">{% if sort_by == 'profit' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-profit' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
-                <th style="width: 60px;" class="text-center">
+                <th class="col-actions text-center">
                     <i class="bi bi-trash" title="Удалить"></i>
                 </th>
             </tr>
@@ -139,27 +98,27 @@
                 <td class="text-center text-secondary">{{ forloop.counter }}</td>
                 <td class="editable-cell copy-on-click" data-field="name" title="Клик — копировать, двойной клик — редактировать">
                     <span class="display-value">{{ item.name }}</span>
-                    <input type="text" class="edit-input" value="{{ item.name }}" style="display:none;">
+                    <input type="text" class="edit-input" value="{{ item.name }}">
                 </td>
                 <td class="editable-cell price-cell" data-field="purchase_price">
                     <span class="display-value">{{ item.purchase_price|format_price }}</span>
-                    <input type="text" class="edit-input" value="{{ item.purchase_price }}" style="display:none;">
+                    <input type="text" class="edit-input" value="{{ item.purchase_price }}">
                 </td>
                 <td class="editable-cell text-center" data-field="quantity">
                     <span class="display-value">{{ item.quantity }}</span>
-                    <input type="number" class="edit-input" value="{{ item.quantity }}" min="1" style="display:none;">
+                    <input type="number" class="edit-input" value="{{ item.quantity }}" min="1">
                 </td>
                 <td class="editable-cell price-cell" data-field="sale_price">
                     <span class="display-value">{{ item.sale_price|format_price }}</span>
-                    <input type="text" class="edit-input" value="{{ item.sale_price|default:'' }}" style="display:none;">
+                    <input type="text" class="edit-input" value="{{ item.sale_price|default:'' }}">
                 </td>
                 <td class="editable-cell text-center" data-field="purchase_date">
                     <span class="display-value">{{ item.purchase_date|date:"d.m.y" }}</span>
-                    <input type="date" class="edit-input" value="{{ item.purchase_date|date:'Y-m-d' }}" style="display:none;">
+                    <input type="date" class="edit-input" value="{{ item.purchase_date|date:'Y-m-d' }}">
                 </td>
                 <td class="editable-cell text-center" data-field="sale_date">
                     <span class="display-value">{{ item.sale_date|date:"d.m.y"|default:"—" }}</span>
-                    <input type="date" class="edit-input" value="{{ item.sale_date|date:'Y-m-d'|default:'' }}" style="display:none;">
+                    <input type="date" class="edit-input" value="{{ item.sale_date|date:'Y-m-d'|default:'' }}">
                 </td>
                 <td class="profit-cell {% if item.sale_price is None %}no-sale-profit{% elif item.profit == 0 %}zero-profit{% elif item.profit < 0 %}negative-profit{% elif item.profit > 0 %}positive-profit{% endif %}">
                     {% if item.sale_price is None %}-{{ item.purchase_price|format_price }}{% else %}{{ item.profit|format_price }}{% endif %}
@@ -173,14 +132,13 @@
             {% empty %}
             <tr>
                 <td colspan="9" class="text-center py-5">
-                    <i class="bi bi-inbox display-4 d-block mb-3" style="color: var(--text-secondary);"></i>
-                    <span style="color: var(--text-primary);">Нет предметов в базе данных</span>
+                    <div class="empty-state"><div><div class="empty-state__icon"><i class="bi bi-inbox"></i></div><h3>Сделок пока нет</h3><p>Добавьте первую сделку или измените фильтр периода.</p><button type="button" class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addItemModal"><i class="bi bi-plus-lg"></i> Добавить сделку</button></div></div>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
-</div>
+</div></div>
 
 <!-- ==================== МОДАЛЬНЫЕ ОКНА ==================== -->
 
@@ -306,7 +264,7 @@
             </div>
             <div class="modal-body">
                 <!-- Форма добавления расхода -->
-                <form id="addExpenseForm" class="mb-4 p-3" style="background: var(--bg-secondary); border-radius: 8px;">
+                <form id="addExpenseForm" class="modal-section mb-4">
                     {% csrf_token %}
                     <h6 class="mb-3">
                         <i class="bi bi-plus-circle me-2"></i>Добавить расход
@@ -330,13 +288,13 @@
                 <h6 class="mb-3">
                     <i class="bi bi-list-ul me-2"></i>Список расходов
                 </h6>
-                <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                <div class="table-responsive expense-scroll">
                     <table class="table table-excel table-sm table-bordered mb-0">
                         <thead>
                             <tr>
-                                <th style="width: 120px;">Дата</th>
+                                <th class="col-date">Дата</th>
                                 <th>Сумма</th>
-                                <th style="width: 100px;" class="text-center">Действия</th>
+                                <th class="col-actions text-center">Действия</th>
                             </tr>
                         </thead>
                         <tbody id="expenseListBody">
@@ -470,11 +428,11 @@
 </div>
 
 <!-- Контекстное меню для редактируемых числовых ячеек -->
-<div id="purchasePriceContextMenu" class="context-menu">
-    <div class="context-menu-item" id="ctxMenuEdit">
+<div id="purchasePriceContextMenu" class="context-menu" role="menu" aria-label="Действия с ценой">
+    <div class="context-menu-item" id="ctxMenuEdit" role="menuitem" tabindex="0">
         <i class="bi bi-pencil"></i> Изменить
     </div>
-    <div class="context-menu-item" id="ctxMenuAdd">
+    <div class="context-menu-item" id="ctxMenuAdd" role="menuitem" tabindex="0">
         <i class="bi bi-plus-lg"></i> Добавить
     </div>
 </div>
@@ -521,7 +479,7 @@
                 <!-- Сумма -->
                 <div class="mb-3">
                     <label class="form-label">Сумма:</label>
-                    <div class="form-control fw-bold" id="fleshTotalSum" style="cursor: pointer;" title="Нажмите для копирования">
+                    <div class="form-control fw-bold copy-total" id="fleshTotalSum" title="Нажмите для копирования">
                         0 ₽
                     </div>
                 </div>

@@ -123,4 +123,5 @@ def item_list(request):
         'turnover': financials['turnover'],
         'sort_by': sort_by,
         'hide_sold': hide_sold,
+        'name_filter': name_filter,
     })

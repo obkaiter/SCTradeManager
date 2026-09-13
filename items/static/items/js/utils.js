@@ -103,7 +103,7 @@ function showToast(message, type = 'info', duration = 3000) {
     };
 
     const toast = document.createElement('div');
-    toast.className = 'toast';
+    toast.className = `toast toast--${type}`;
     toast.setAttribute('role', 'alert');
     toast.setAttribute('aria-live', 'assertive');
     toast.setAttribute('aria-atomic', 'true');

@@ -23,6 +23,24 @@ function initFleshModal() {
 
     if (!openFleshBtn || !fleshModal) return;
 
+    // Bootstrap does not manage nested modals reliably: temporarily hide the
+    // parent and restore it after the price dialog closes.
+    const pricesTrigger = fleshModal.querySelector('[data-bs-target="#fleshPricesModal"]');
+    const pricesModalElement = document.getElementById('fleshPricesModal');
+    if (pricesTrigger && pricesModalElement) {
+        pricesTrigger.addEventListener('click', function(event) {
+            event.preventDefault();
+            const parent = bootstrap.Modal.getOrCreateInstance(fleshModal);
+            parent.hide();
+            const child = bootstrap.Modal.getOrCreateInstance(pricesModalElement);
+            pricesModalElement.addEventListener('hidden.bs.modal', function restoreParent() {
+                pricesModalElement.removeEventListener('hidden.bs.modal', restoreParent);
+                if (document.body.contains(fleshModal)) parent.show();
+            });
+            window.setTimeout(() => child.show(), 180);
+        });
+    }
+
     // Загрузка цен при открытии модального окна
     fleshModal.addEventListener('show.bs.modal', function() {
         loadFleshPrices();
@@ -71,7 +89,6 @@ function loadFleshPrices() {
             }
         })
         .catch(error => {
-            console.error('Error loading flesh prices:', error);
             showToast('Ошибка при загрузке цен', 'error');
         });
 }
@@ -169,7 +186,6 @@ function initFleshPricesForm() {
             }
         })
         .catch(error => {
-            console.error('Error saving flesh prices:', error);
             showToast('Ошибка при сохранении цен', 'error');
         });
     });
@@ -241,7 +257,6 @@ function addFleshItems() {
         }
     })
     .catch(error => {
-        console.error('Error adding flesh items:', error);
         showToast('Ошибка при добавлении', 'error');
     })
     .finally(() => {
