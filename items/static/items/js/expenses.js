@@ -56,7 +56,6 @@ function loadExpenses() {
             initExpenseButtons();
         })
         .catch(error => {
-            console.error('Error loading expenses:', error);
             showToast('Ошибка при загрузке расходов', 'error');
         });
 }
@@ -109,7 +108,6 @@ function initExpenseButtons() {
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     showToast('Ошибка при удалении расхода', 'error');
                 });
             }
@@ -179,7 +177,6 @@ function initAddExpenseForm() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             showToast('Ошибка при добавлении расхода', 'error');
         })
         .finally(() => {
@@ -241,7 +238,6 @@ function initEditExpenseForm() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             showToast('Ошибка при обновлении расхода', 'error');
         })
         .finally(() => {

@@ -332,7 +332,6 @@ function initDeleteItem() {
                     }
                 })
                 .catch(error => {
-                    console.error('Error:', error);
                     showToast('Ошибка при удалении предмета', 'error');
                 });
             }
@@ -413,14 +412,6 @@ function initAddItemSubmit() {
         const duplicateInput = document.getElementById('addItemDuplicate');
         if (duplicateInput) {
             formData.set('duplicate', duplicateInput.value);
-            console.log('Duplicate value sent:', duplicateInput.value);
-        } else {
-            console.log('Duplicate input not found!');
-        }
-
-        // Логируем все данные формы
-        for (var pair of formData.entries()) {
-            console.log(pair[0] + ': ' + pair[1]);
         }
 
         const purchasePriceInput = document.getElementById('addItemPurchasePrice');
@@ -467,7 +458,6 @@ function initAddItemSubmit() {
             }
         })
         .catch(error => {
-            console.error('Error:', error);
             showToast('Ошибка при добавлении предмета', 'error');
         })
         .finally(() => {

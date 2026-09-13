@@ -152,11 +152,6 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
     const context = ctx.getContext('2d');
     const chartContainer = document.getElementById('chartContainer');
 
-    // Фиксированная высота контейнера
-    if (chartContainer) {
-        chartContainer.style.height = '400px';
-    }
-
     new Chart(context, {
         type: 'line',
         data: {
@@ -164,17 +159,17 @@ function initProfitChart(labels, data, nameFilter, sortBy) {
             datasets: [{
                 label: 'Чистая прибыль',
                 data: data,
-                borderColor: 'rgb(40, 167, 69)',
-                backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                borderColor: '#37a5ff',
+                backgroundColor: 'rgba(55, 165, 255, 0.12)',
                 borderWidth: 2,
                 fill: true,
                 tension: 0.3,
                 pointRadius: 4,
                 pointHoverRadius: 6,
-                pointBackgroundColor: 'rgb(40, 167, 69)',
-                pointBorderColor: 'rgb(40, 167, 69)',
-                pointHoverBackgroundColor: 'rgb(40, 167, 69)',
-                pointHoverBorderColor: 'rgb(40, 167, 69)',
+                pointBackgroundColor: '#37a5ff',
+                pointBorderColor: '#37a5ff',
+                pointHoverBackgroundColor: '#68baff',
+                pointHoverBorderColor: '#68baff',
             }]
         },
         options: {

@@ -5,34 +5,16 @@
 
 {% block title %}Аналитика прибыли{% endblock %}
 
-{% block extra_css %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.css">
-{% endblock %}
-
 {% block content %}
-<!-- Заголовок и навигация -->
-<div class="row mb-4 align-items-center">
-    <div class="col-md-8">
-        <h2 class="mb-0">
-            <i class="bi bi-bar-chart-line me-2"></i>
-            Аналитика прибыли
-        </h2>
-    </div>
-    <div class="col-md-4 text-md-end mt-3 mt-md-0">
-        <a href="{% url 'items:item_list' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&hide_sold={{ hide_sold }}&name={{ name_filter }}&sort={{ sort_by }}" class="btn btn-secondary">
-            <i class="bi bi-house-door me-1"></i>
-            На главную
-        </a>
-    </div>
-</div>
+<section class="page-header">
+    <div><span class="page-eyebrow">Сводка · {{ date_from|date:'d.m.y' }} — {{ date_to|date:'d.m.y' }}</span><h1 class="page-title"><i class="bi bi-bar-chart-line"></i><span>Аналитика прибыли</span></h1><p class="page-subtitle">Динамика продаж, расходов и результата по выбранному периоду.</p></div>
+    <a href="{% url 'items:item_list' %}?date_from={{ date_from|date:'Y-m-d' }}&date_to={{ date_to|date:'Y-m-d' }}&hide_sold={{ hide_sold }}&name={{ name_filter|urlencode }}&sort={{ sort_by }}" class="btn btn-secondary"><i class="bi bi-arrow-left"></i> К сделкам</a>
+</section>
 
 <!-- Фильтр по датам -->
-<div class="card mb-4">
-    <div class="card-header">
-        <i class="bi bi-funnel me-2"></i>
-        Фильтр по датам
-    </div>
-    <div class="card-body">
+<div class="filter-panel mb-4">
+    <div class="d-flex align-items-center gap-2 mb-3"><i class="bi bi-funnel text-info"></i><h2 class="section-title">Период аналитики</h2></div>
+    <div>
         <form method="get" class="row g-3 align-items-end" id="analyticsFilterForm">
             <input type="hidden" name="hide_sold" value="{{ hide_sold }}">
             <input type="hidden" name="name" value="{{ name_filter }}">
@@ -85,57 +67,15 @@
     </div>
 </div>
 
-<!-- Сводка по финансам -->
-<div class="row mb-4">
-    <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-white small text-uppercase mb-2">
-                    <i class="bi bi-cash-stack me-1"></i> Оборот
-                </h6>
-                <p class="fs-4 mb-0 text-info"><strong>{{ turnover|format_price }}</strong></p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-white small text-uppercase mb-2">
-                    <i class="bi bi-receipt me-1"></i> Накладные расходы
-                </h6>
-                <p class="fs-4 mb-0 text-danger"><strong>{{ total_expenses|format_price }}</strong></p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-white small text-uppercase mb-2">
-                    <i class="bi bi-piggy-bank me-1"></i> Зарезервировано
-                </h6>
-                <p class="fs-4 mb-0 text-secondary"><strong>{{ reserved_amount|format_price }}</strong></p>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-md-6 col-lg-3 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h6 class="text-white small text-uppercase mb-2">
-                    <i class="bi bi-trophy me-2"></i> Чистая прибыль
-                </h6>
-                <p class="fs-4 mb-0 {% if gross_profit < 0 %}text-danger{% elif gross_profit > 0 %}text-success{% else %}text-secondary{% endif %}">
-                    <strong>{{ gross_profit|format_price }}</strong>
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
+<section class="kpi-grid" aria-label="Показатели аналитики">
+    <article class="kpi-card kpi-card--accent"><div class="kpi-label"><i class="bi bi-cash-stack"></i> Оборот</div><div class="kpi-value">{{ turnover|format_price }}</div><div class="kpi-meta">Продажи за период</div></article>
+    <article class="kpi-card {% if total_expenses > 0 %}kpi-card--danger{% endif %}"><div class="kpi-label"><i class="bi bi-receipt"></i> Расходы</div><div class="kpi-value {% if total_expenses > 0 %}is-negative{% endif %}">{% if total_expenses > 0 %}- {% endif %}{{ total_expenses|format_price }}</div><div class="kpi-meta">Накладные расходы</div></article>
+    <article class="kpi-card kpi-card--accent"><div class="kpi-label"><i class="bi bi-piggy-bank"></i> В резерве</div><div class="kpi-value">{{ reserved_amount|format_price }}</div><div class="kpi-meta">Открытые покупки</div></article>
+    <article class="kpi-card {% if gross_profit > 0 %}kpi-card--success{% elif gross_profit < 0 %}kpi-card--danger{% endif %}"><div class="kpi-label"><i class="bi bi-wallet2"></i> Валовая прибыль</div><div class="kpi-value {% if gross_profit > 0 %}is-positive{% elif gross_profit < 0 %}is-negative{% endif %}">{{ gross_profit|format_price }}</div><div class="kpi-meta">До вычета расходов</div></article>
+</section>
 
 <!-- Диаграмма -->
-<div class="card">
+<div class="card mb-4">
     <div class="card-header">
         <i class="bi bi-bar-chart-fill me-2"></i> Чистая прибыль по дням
     </div>
@@ -146,7 +86,7 @@
             Нет данных о продажах за выбранный период. Выберите другой диапазон дат.
         </div>
         {% else %}
-        <div id="chartContainer" style="height: 500px; min-height: 300px;">
+        <div id="chartContainer" class="chart-shell">
             <canvas id="profitChart"></canvas>
         </div>
         {% endif %}
@@ -154,7 +94,7 @@
 </div>
 
 <!-- График цен и отдельные лоты -->
-<div class="card mt-4">
+<div class="card">
     <div class="card-header">
         <i class="bi bi-graph-up me-2"></i>
         Прибыль по предметам
@@ -170,7 +110,7 @@
             <span class="text-secondary">Выбранный предмет:</span>
             <strong id="itemPriceChartTitle"></strong>
         </div>
-        <div id="itemPriceChartContainer" style="height: 400px; position: relative; margin-bottom: 20px;">
+        <div id="itemPriceChartContainer" class="chart-shell chart-shell--compact mb-3">
             <canvas id="itemPriceChart"></canvas>
         </div>
         
@@ -179,28 +119,28 @@
             <table class="table table-excel mb-0" data-client-sort="true">
                 <thead>
                     <tr>
-                        <th style="width: 50px;" class="text-center">#</th>
-                        <th class="sortable" data-sort="name" style="width: 200px;">
+                        <th class="col-index text-center">#</th>
+                        <th class="col-name sortable" data-sort="name">
                             <i class="bi bi-tag me-1"></i>
                             Название
                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                         </th>
-                        <th class="sortable text-center" data-sort="quantity" style="width: 110px;">
+                        <th class="col-quantity sortable text-center" data-sort="quantity">
                             <i class="bi bi-hash me-1"></i>
                             Количество
                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                         </th>
-                        <th class="sortable text-right" data-sort="purchase_price" style="width: 150px;">
+                        <th class="col-price sortable text-right" data-sort="purchase_price">
                             <i class="bi bi-cart-down me-1"></i>
                             Цена покупки
                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                         </th>
-                        <th class="sortable text-right" data-sort="sale_price" style="width: 150px;">
+                        <th class="col-price sortable text-right" data-sort="sale_price">
                             <i class="bi bi-cart-up me-1"></i>
                             Цена продажи
                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>
                         </th>
-                        <th class="sortable text-right" data-sort="profit" style="width: 130px;">
+                        <th class="col-price sortable text-right" data-sort="profit">
                             <i class="bi bi-graph-up me-1"></i>
                             Прибыль
                             <span class="sort-icon"><i class="bi bi-arrow-down-up"></i></span>

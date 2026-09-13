@@ -173,7 +173,7 @@ function initContextMenuGlobal() {
             e.stopPropagation();
             contextMenuCell = target;
             hideCustomTooltip(); // Скрываем подсказку при показе контекстного меню
-            showContextMenu(e.pageX, e.pageY);
+            showContextMenu(e.clientX, e.clientY);
             return false;
         }
     });
@@ -566,7 +566,11 @@ function updateFinancialSummary(financials) {
 
     if (totalExpensesEl) {
         const value = parseFloat(financials.total_expenses) || 0;
-        totalExpensesEl.textContent = '- ' + value.toLocaleString('ru-RU') + ' ₽';
+        totalExpensesEl.textContent = (value > 0 ? '- ' : '') + value.toLocaleString('ru-RU') + ' ₽';
+        totalExpensesEl.classList.remove('is-negative', 'is-positive', 'text-danger', 'text-success');
+        const expensesCard = totalExpensesEl.closest('.kpi-card');
+        if (expensesCard) expensesCard.classList.toggle('kpi-card--danger', value > 0);
+        if (value > 0) totalExpensesEl.classList.add('is-negative');
     }
 
     if (reservedAmountEl) {
@@ -858,6 +862,11 @@ function initContextMenu() {
     });
 
     document.addEventListener('click', hideContextMenu);
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') hideContextMenu();
+    });
+    window.addEventListener('scroll', hideContextMenu, true);
+    window.addEventListener('resize', hideContextMenu);
     contextMenu.addEventListener('click', e => e.stopPropagation());
     contextMenu.addEventListener('contextmenu', e => {
         e.preventDefault();
@@ -868,7 +877,7 @@ function initContextMenu() {
 /**
  * Показать контекстное меню
  */
-function showContextMenu(x, y) {
+function showContextMenu(clientX, clientY) {
     if (!contextMenu) return;
 
     const addItem = document.getElementById('ctxMenuAdd');
@@ -877,16 +886,18 @@ function showContextMenu(x, y) {
     }
 
     contextMenu.style.display = 'block';
-    contextMenu.style.left = x + 'px';
-    contextMenu.style.top = y + 'px';
+    const viewportPadding = 8;
+    contextMenu.style.left = '0px';
+    contextMenu.style.top = '0px';
 
     const rect = contextMenu.getBoundingClientRect();
-    if (x + rect.width > window.innerWidth) {
-        contextMenu.style.left = (x - rect.width) + 'px';
-    }
-    if (y + rect.height > window.innerHeight) {
-        contextMenu.style.top = (y - rect.height) + 'px';
-    }
+    const maxLeft = Math.max(viewportPadding, window.innerWidth - rect.width - viewportPadding);
+    const maxTop = Math.max(viewportPadding, window.innerHeight - rect.height - viewportPadding);
+    const left = Math.min(Math.max(viewportPadding, clientX), maxLeft);
+    const top = Math.min(Math.max(viewportPadding, clientY), maxTop);
+
+    contextMenu.style.left = left + 'px';
+    contextMenu.style.top = top + 'px';
 }
 
 /**
