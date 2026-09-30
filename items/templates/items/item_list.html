@@ -20,25 +20,6 @@
     </div>
 </section>
 
-<section class="filter-panel" aria-label="Фильтры сделок">
-    <form class="filter-grid" id="quickFilterForm" method="get">
-        <div class="filter-search">
-            <label class="filter-panel__label" for="quickNameInput">Поиск</label>
-            <div class="input-shell"><i class="bi bi-search"></i><input type="search" class="form-control" id="quickNameInput" name="name" value="{{ request.GET.name|default:'' }}" placeholder="Название предмета" autocomplete="off"></div>
-        </div>
-        <div><label class="filter-panel__label" for="quickDateFrom">Период с</label><input type="date" class="form-control" id="quickDateFrom" name="date_from" value="{{ date_from|date:'Y-m-d' }}"></div>
-        <div><label class="filter-panel__label" for="quickDateTo">Период по</label><input type="date" class="form-control" id="quickDateTo" name="date_to" value="{{ date_to|date:'Y-m-d' }}"></div>
-        <div class="filter-submit"><input type="hidden" name="hide_sold" value="{{ hide_sold|yesno:'true,false' }}"><input type="hidden" name="sort" value="{{ sort_by }}"><button class="btn btn-secondary" type="submit"><i class="bi bi-arrow-right"></i> Применить</button></div>
-    </form>
-    <div class="filter-presets" aria-label="Быстрые периоды">
-        <button type="button" class="btn btn-sm btn-outline-primary" id="monthBtn"><i class="bi bi-calendar3"></i> Месяц</button>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="weekBtn"><i class="bi bi-calendar-week"></i> Неделя</button>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="threeDaysBtn"><i class="bi bi-calendar-day"></i> 3 дня</button>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="todayBtn"><i class="bi bi-calendar-event"></i> Сегодня</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary" id="showAllBtn"><i class="bi bi-infinity"></i> Всё время</button>
-    </div>
-</section>
-
 <section class="kpi-grid item-kpi-grid" aria-label="Финансовая сводка">
     <article class="kpi-card {% if total_expenses > 0 %}kpi-card--danger{% endif %}"><div class="kpi-label"><i class="bi bi-receipt-cutoff"></i> Расходы</div><div id="summaryTotalExpenses" class="kpi-value {% if total_expenses > 0 %}is-negative{% endif %}">{% if total_expenses > 0 %}- {% endif %}{{ total_expenses|format_price }}</div><div class="kpi-meta">Накладные расходы</div></article>
     <article class="kpi-card kpi-card--accent"><div class="kpi-label"><i class="bi bi-piggy-bank"></i> В резерве</div><div id="summaryReservedAmount" class="kpi-value">{{ reserved_amount|format_price }}</div><div class="kpi-meta">Открытые покупки</div></article>
@@ -84,7 +65,7 @@
                     <span class="sort-icon">{% if sort_by == 'sale_date' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-sale_date' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
                 <th class="col-price sortable" data-sort="profit">
-                    <i class="bi bi-trend-up me-1"></i>
+                    <i class="bi bi-graph-up-arrow me-1"></i>
                     Прибыль
                     <span class="sort-icon">{% if sort_by == 'profit' %}<i class="bi bi-arrow-up"></i>{% elif sort_by == '-profit' %}<i class="bi bi-arrow-down"></i>{% else %}<i class="bi bi-arrow-down-up"></i>{% endif %}</span>
                 </th>
@@ -99,26 +80,33 @@
                 <td class="text-center text-secondary">{{ forloop.counter }}</td>
                 <td class="editable-cell copy-on-click" data-field="name" title="Клик — копировать, двойной клик — редактировать">
                     <span class="display-value">{{ item.name }}</span>
+                    <i class="bi bi-clipboard copy-hint-icon" aria-hidden="true"></i>
+                    <i class="bi bi-check2 copy-feedback-icon" aria-hidden="true"></i>
                     <input type="text" class="edit-input" value="{{ item.name }}">
                 </td>
                 <td class="editable-cell price-cell" data-field="purchase_price">
                     <span class="display-value">{{ item.purchase_price|format_price }}</span>
+                    <i class="bi bi-pencil-fill edit-hint-icon" aria-hidden="true"></i>
                     <input type="text" class="edit-input" value="{{ item.purchase_price }}">
                 </td>
                 <td class="editable-cell text-center" data-field="quantity">
                     <span class="display-value">{{ item.quantity }}</span>
+                    <i class="bi bi-pencil-fill edit-hint-icon" aria-hidden="true"></i>
                     <input type="number" class="edit-input" value="{{ item.quantity }}" min="1">
                 </td>
                 <td class="editable-cell price-cell" data-field="sale_price">
                     <span class="display-value">{{ item.sale_price|format_price }}</span>
+                    <i class="bi bi-pencil-fill edit-hint-icon" aria-hidden="true"></i>
                     <input type="text" class="edit-input" value="{{ item.sale_price|default:'' }}">
                 </td>
                 <td class="editable-cell text-center" data-field="purchase_date">
                     <span class="display-value">{{ item.purchase_date|date:"d.m.y" }}</span>
+                    <i class="bi bi-pencil-fill edit-hint-icon" aria-hidden="true"></i>
                     <input type="date" class="edit-input" value="{{ item.purchase_date|date:'Y-m-d' }}">
                 </td>
                 <td class="editable-cell text-center" data-field="sale_date">
                     <span class="display-value">{{ item.sale_date|date:"d.m.y"|default:"—" }}</span>
+                    <i class="bi bi-pencil-fill edit-hint-icon" aria-hidden="true"></i>
                     <input type="date" class="edit-input" value="{{ item.sale_date|date:'Y-m-d'|default:'' }}">
                 </td>
                 <td class="profit-cell {% if item.sale_price is None %}no-sale-profit{% elif item.profit == 0 %}zero-profit{% elif item.profit < 0 %}negative-profit{% elif item.profit > 0 %}positive-profit{% endif %}">
@@ -163,16 +151,16 @@
                         <input type="text" name="name" id="addItemName" class="form-control" placeholder="Введите название" required autofocus>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label" for="addItemQuantity">
-                            <i class="bi bi-hash me-1"></i>Количество
-                        </label>
-                        <input type="number" name="quantity" id="addItemQuantity" class="form-control" placeholder="1" min="1" value="1">
-                    </div>
-                    <div class="mb-3">
                         <label class="form-label" for="addItemPurchasePrice">
                             <i class="bi bi-cart me-1"></i>Цена покупки
                         </label>
                         <input type="text" name="purchase_price" id="addItemPurchasePrice" class="form-control" placeholder="0 ₽" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="addItemQuantity">
+                            <i class="bi bi-hash me-1"></i>Количество
+                        </label>
+                        <input type="number" name="quantity" id="addItemQuantity" class="form-control" placeholder="1" min="1" value="1">
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="addItemPurchaseDate">

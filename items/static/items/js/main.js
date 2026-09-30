@@ -238,16 +238,16 @@ function setupDateFilterButtons() {
         dateToInput.value = formatLocalDate(today);
     }
 
-    function connectPresets(prefix, fromId, toId) {
+    function connectPresets(buttonIds, fromId, toId) {
         const dateFromInput = document.getElementById(fromId);
         const dateToInput = document.getElementById(toId);
-        document.getElementById(`${prefix}MonthBtn`)?.addEventListener('click', function() {
+        document.getElementById(buttonIds.month)?.addEventListener('click', function() {
             setMonthRange(dateFromInput, dateToInput);
         });
         const presets = [
-            [`${prefix}WeekBtn`, 7],
-            [`${prefix}ThreeDaysBtn`, 3],
-            [`${prefix}TodayBtn`, 0],
+            [buttonIds.week, 7],
+            [buttonIds.threeDays, 3],
+            [buttonIds.today, 0],
         ];
 
         presets.forEach(([buttonId, daysAgo]) => {
@@ -256,7 +256,7 @@ function setupDateFilterButtons() {
             });
         });
 
-        document.getElementById(`${prefix}ShowAllBtn`)?.addEventListener('click', function() {
+        document.getElementById(buttonIds.showAll)?.addEventListener('click', function() {
             if (!dateFromInput || !dateToInput) return;
             dateFromInput.value = '2020-01-01';
             dateToInput.value = '2099-12-31';
@@ -265,8 +265,7 @@ function setupDateFilterButtons() {
 
     // Быстрые фильтры на странице и пресеты в модальном окне имеют
     // собственные поля и независимые кнопки.
-    connectPresets('', 'quickDateFrom', 'quickDateTo');
-    connectPresets('filter', 'filterDateFrom', 'filterDateTo');
+    connectPresets({ month: 'filterMonthBtn', week: 'filterWeekBtn', threeDays: 'filterThreeDaysBtn', today: 'filterTodayBtn', showAll: 'filterShowAllBtn' }, 'filterDateFrom', 'filterDateTo');
 }
 
 /**
