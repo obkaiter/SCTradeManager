@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Кнопки фильтра по дате
-    setupDateFilterButtons(hideSoldState);
+    setupDateFilterButtons();
 
     // Инициализация модального окна фильтра
     initDateFilterModal();
@@ -206,91 +206,67 @@ function highlightActiveFilterButton(activeId) {
 /**
  * Настройка кнопок фильтра по дате
  */
-function setupDateFilterButtons(hideSoldState) {
-    const showAllBtn = document.getElementById('showAllBtn');
-    if (showAllBtn) {
-        showAllBtn.addEventListener('click', function() {
-            const hideSold = hideSoldState?.value || 'false';
-            const nameFilter = document.getElementById('filterNameInput')?.value || '';
-            let url = '?date_from=2020-01-01&date_to=2099-12-31&hide_sold=' + hideSold;
-            if (nameFilter) {
-                url += '&name=' + encodeURIComponent(nameFilter);
-            }
-            window.location.href = url;
+function setupDateFilterButtons() {
+    // Формируем дату в локальном часовом поясе, не используя toISOString(),
+    // который может сдвинуть дату на соседний день.
+    function formatLocalDate(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function setDateRange(dateFromInput, dateToInput, daysAgo) {
+        if (!dateFromInput || !dateToInput) return;
+        const today = new Date();
+        const from = new Date(today);
+        from.setDate(from.getDate() - daysAgo);
+        dateFromInput.value = formatLocalDate(from);
+        dateToInput.value = formatLocalDate(today);
+    }
+
+    function setMonthRange(dateFromInput, dateToInput) {
+        if (!dateFromInput || !dateToInput) return;
+        const today = new Date();
+        const from = new Date(today);
+        const dayOfMonth = from.getDate();
+        from.setDate(1);
+        from.setMonth(from.getMonth() - 1);
+        const lastDayOfPreviousMonth = new Date(from.getFullYear(), from.getMonth() + 1, 0).getDate();
+        from.setDate(Math.min(dayOfMonth, lastDayOfPreviousMonth));
+        dateFromInput.value = formatLocalDate(from);
+        dateToInput.value = formatLocalDate(today);
+    }
+
+    function connectPresets(prefix, fromId, toId) {
+        const dateFromInput = document.getElementById(fromId);
+        const dateToInput = document.getElementById(toId);
+        document.getElementById(`${prefix}MonthBtn`)?.addEventListener('click', function() {
+            setMonthRange(dateFromInput, dateToInput);
+        });
+        const presets = [
+            [`${prefix}WeekBtn`, 7],
+            [`${prefix}ThreeDaysBtn`, 3],
+            [`${prefix}TodayBtn`, 0],
+        ];
+
+        presets.forEach(([buttonId, daysAgo]) => {
+            document.getElementById(buttonId)?.addEventListener('click', function() {
+                setDateRange(dateFromInput, dateToInput, daysAgo);
+            });
+        });
+
+        document.getElementById(`${prefix}ShowAllBtn`)?.addEventListener('click', function() {
+            if (!dateFromInput || !dateToInput) return;
+            dateFromInput.value = '2020-01-01';
+            dateToInput.value = '2099-12-31';
         });
     }
 
-    const todayBtn = document.getElementById('todayBtn');
-    if (todayBtn) {
-        todayBtn.addEventListener('click', function() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            const today = `${year}-${month}-${day}`;
-            const hideSold = hideSoldState?.value || 'false';
-            const nameFilter = document.getElementById('filterNameInput')?.value || '';
-            let url = '?date_from=' + today + '&date_to=' + today + '&hide_sold=' + hideSold;
-            if (nameFilter) {
-                url += '&name=' + encodeURIComponent(nameFilter);
-            }
-            window.location.href = url;
-        });
-    }
-
-    const weekBtn = document.getElementById('weekBtn');
-    if (weekBtn) {
-        weekBtn.addEventListener('click', function() {
-            const today = new Date();
-            const weekAgo = new Date(today);
-            weekAgo.setDate(today.getDate() - 7);
-
-            const yearFrom = weekAgo.getFullYear();
-            const monthFrom = String(weekAgo.getMonth() + 1).padStart(2, '0');
-            const dayFrom = String(weekAgo.getDate()).padStart(2, '0');
-            const dateFrom = `${yearFrom}-${monthFrom}-${dayFrom}`;
-
-            const yearTo = today.getFullYear();
-            const monthTo = String(today.getMonth() + 1).padStart(2, '0');
-            const dayTo = String(today.getDate()).padStart(2, '0');
-            const dateTo = `${yearTo}-${monthTo}-${dayTo}`;
-
-            const hideSold = hideSoldState?.value || 'false';
-            const nameFilter = document.getElementById('filterNameInput')?.value || '';
-            let url = '?date_from=' + dateFrom + '&date_to=' + dateTo + '&hide_sold=' + hideSold;
-            if (nameFilter) {
-                url += '&name=' + encodeURIComponent(nameFilter);
-            }
-            window.location.href = url;
-        });
-    }
-
-    const threeDaysBtn = document.getElementById('threeDaysBtn');
-    if (threeDaysBtn) {
-        threeDaysBtn.addEventListener('click', function() {
-            const today = new Date();
-            const threeDaysAgo = new Date(today);
-            threeDaysAgo.setDate(today.getDate() - 3);
-
-            const yearFrom = threeDaysAgo.getFullYear();
-            const monthFrom = String(threeDaysAgo.getMonth() + 1).padStart(2, '0');
-            const dayFrom = String(threeDaysAgo.getDate()).padStart(2, '0');
-            const dateFrom = `${yearFrom}-${monthFrom}-${dayFrom}`;
-
-            const yearTo = today.getFullYear();
-            const monthTo = String(today.getMonth() + 1).padStart(2, '0');
-            const dayTo = String(today.getDate()).padStart(2, '0');
-            const dateTo = `${yearTo}-${monthTo}-${dayTo}`;
-
-            const hideSold = hideSoldState?.value || 'false';
-            const nameFilter = document.getElementById('filterNameInput')?.value || '';
-            let url = '?date_from=' + dateFrom + '&date_to=' + dateTo + '&hide_sold=' + hideSold;
-            if (nameFilter) {
-                url += '&name=' + encodeURIComponent(nameFilter);
-            }
-            window.location.href = url;
-        });
-    }
+    // Быстрые фильтры на странице и пресеты в модальном окне имеют
+    // собственные поля и независимые кнопки.
+    connectPresets('', 'quickDateFrom', 'quickDateTo');
+    connectPresets('filter', 'filterDateFrom', 'filterDateTo');
 }
 
 /**

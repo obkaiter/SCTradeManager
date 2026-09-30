@@ -31,6 +31,7 @@
         <div class="filter-submit"><input type="hidden" name="hide_sold" value="{{ hide_sold|yesno:'true,false' }}"><input type="hidden" name="sort" value="{{ sort_by }}"><button class="btn btn-secondary" type="submit"><i class="bi bi-arrow-right"></i> Применить</button></div>
     </form>
     <div class="filter-presets" aria-label="Быстрые периоды">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="monthBtn"><i class="bi bi-calendar3"></i> Месяц</button>
         <button type="button" class="btn btn-sm btn-outline-primary" id="weekBtn"><i class="bi bi-calendar-week"></i> Неделя</button>
         <button type="button" class="btn btn-sm btn-outline-primary" id="threeDaysBtn"><i class="bi bi-calendar-day"></i> 3 дня</button>
         <button type="button" class="btn btn-sm btn-outline-primary" id="todayBtn"><i class="bi bi-calendar-event"></i> Сегодня</button>
@@ -231,16 +232,19 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-primary" id="weekBtn">
+                    <button type="button" class="btn btn-outline-primary" id="filterMonthBtn">
+                        <i class="bi bi-calendar3 me-1"></i>Месяц
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="filterWeekBtn">
                         <i class="bi bi-calendar-week me-1"></i>Неделя
                     </button>
-                    <button type="button" class="btn btn-outline-primary" id="threeDaysBtn">
+                    <button type="button" class="btn btn-outline-primary" id="filterThreeDaysBtn">
                         <i class="bi bi-calendar-day me-1"></i>3 дня
                     </button>
-                    <button type="button" class="btn btn-outline-primary" id="todayBtn">
+                    <button type="button" class="btn btn-outline-primary" id="filterTodayBtn">
                         <i class="bi bi-calendar-day me-1"></i>Сегодня
                     </button>
-                    <button type="button" class="btn btn-outline-secondary" id="showAllBtn">
+                    <button type="button" class="btn btn-outline-secondary" id="filterShowAllBtn">
                         <i class="bi bi-list-ul me-1"></i>Всё
                     </button>
                     <button type="submit" class="btn btn-primary">
